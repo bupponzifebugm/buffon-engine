@@ -1,4 +1,5 @@
-import { Sun, Moon, LogOut } from 'lucide-react';
+import { Sun, Moon, LogOut, Calendar } from 'lucide-react';
+import { fmtDate, getTodayString } from '../../lib/utils';
 
 export default function Header({ profile, tierConfig, onToggleDark, isDark, onSignOut }) {
   return (
@@ -9,8 +10,12 @@ export default function Header({ profile, tierConfig, onToggleDark, isDark, onSi
             <div className="logo-text">
               BUFFON <span className="sep">/</span> EXECUTION ENGINE <span className="sep">/</span> v4.0
             </div>
-            <div className="title-block">
+            <div className="title-block" style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
               <h1>Capital & Protocol System</h1>
+              <div className="header-date" style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6, opacity: 0.9 }}>
+                <Calendar size={14} style={{ color: 'var(--accent)' }} />
+                <span>{fmtDate(getTodayString())}</span>
+              </div>
             </div>
           </div>
           <div className="header-actions">
