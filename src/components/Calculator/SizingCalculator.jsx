@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { fmtRp, fmt, fmtPct } from '../../lib/utils';
 import { RISK_PCT, MAX_CAP_PCT, IDR_SIZING } from '../../lib/constants';
 
