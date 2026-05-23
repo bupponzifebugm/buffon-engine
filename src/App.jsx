@@ -50,6 +50,88 @@ function App() {
   const [addModalPrefill, setAddModalPrefill] = useState(null);
   const [calcResults, setCalcResults] = useState(null);
 
+  // Cooldown Lockout state & timer
+  const [cooldownTimeLeft, setCooldownTimeLeft] = useState(0);
+  const [ugmStatus, setUgmStatus] = useState({ isObservationMode: false, currentClass: null });
+
+  // Cooldown Lockout check
+  useEffect(() => {
+    if (!positions || positions.length === 0) {
+      setCooldownTimeLeft(0);
+      return;
+    }
+
+    const lastOffendingTrade = positions
+      .filter(p => p.pnl < 0 || p.is_violation)
+      .sort((a, b) => new Date(b.created_at || b.id) - new Date(a.created_at || a.id))[0];
+
+    if (!lastOffendingTrade) {
+      setCooldownTimeLeft(0);
+      return;
+    }
+
+    const tradeTime = new Date(lastOffendingTrade.created_at || lastOffendingTrade.id);
+    const checkCooldown = () => {
+      const diffMs = new Date() - tradeTime;
+      const cooldownPeriodMs = 60 * 60 * 1000; // 1 hour cooldown
+      const remainingMs = cooldownPeriodMs - diffMs;
+      if (remainingMs > 0) {
+        setCooldownTimeLeft(Math.ceil(remainingMs / 1000));
+      } else {
+        setCooldownTimeLeft(0);
+      }
+    };
+
+    checkCooldown();
+    const interval = setInterval(checkCooldown, 1000);
+    return () => clearInterval(interval);
+  }, [positions]);
+
+  // Academic Calendar & Holiday check
+  const checkUgmAcademics = useCallback(() => {
+    if (!profile) return { isObservationMode: false, currentClass: null };
+    const schedule = profile.class_schedule || [];
+    const holidays = profile.observed_holidays || [];
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-CA');
+    if (holidays.includes(dateStr)) {
+      return { isObservationMode: true, currentClass: 'Observed active holiday' };
+    }
+
+    const day = now.getDay(); // 0 = Sunday, 1 = Monday...
+    const hours = now.getHours().toString().padStart(2, '0');
+    const mins = now.getMinutes().toString().padStart(2, '0');
+    const currentTimeStr = `${hours}:${mins}`;
+
+    const activeClass = schedule.find(c => {
+      return parseInt(c.day) === day && currentTimeStr >= c.start && currentTimeStr <= c.end;
+    });
+
+    if (activeClass) {
+      return { isObservationMode: true, currentClass: activeClass.name };
+    }
+
+    if (day === 1) {
+      return { isObservationMode: true, currentClass: 'Monday observation only' };
+    }
+
+    if (day === 0 || day === 6) {
+      return { isObservationMode: true, currentClass: 'Weekend Market Closed' };
+    }
+
+    return { isObservationMode: false, currentClass: null };
+  }, [profile]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setUgmStatus(checkUgmAcademics());
+    }, 15000);
+
+    setUgmStatus(checkUgmAcademics());
+    return () => clearInterval(interval);
+  }, [checkUgmAcademics]);
+
   // Get current tier config
   const tierConfig = TIERS[currentTierKey] || TIERS.survival_10m;
   const capital = tierConfig.capital;
@@ -165,6 +247,8 @@ function App() {
             monthlyPnl={monthlyPnl}
             tierConfig={tierConfig}
             positions={positions}
+            cooldownTimeLeft={cooldownTimeLeft}
+            ugmStatus={ugmStatus}
           />
 
           <DrawdownMonitor
@@ -181,6 +265,9 @@ function App() {
               tierConfig={tierConfig}
               onOpenAddModal={handleOpenAddModal}
               onResultsChange={setCalcResults}
+              todaysGate={todaysGate}
+              cooldownTimeLeft={cooldownTimeLeft}
+              ugmStatus={ugmStatus}
             />
             <div>
               <TPProtocol results={calcResults} />
@@ -198,7 +285,11 @@ function App() {
 
         {/* === ANALYTICS & HEATMAP TAB === */}
         <div className={`tab-content${activeTab === 'tab-analytics' ? ' active' : ''}`}>
-          <AnalyticsDashboard positions={positions} />
+          <AnalyticsDashboard 
+            positions={positions} 
+            cleanStreak={cleanStreak}
+            currentTierKey={currentTierKey}
+          />
         </div>
 
         {/* === RISK & DRAWDOWN TAB === */}
@@ -236,7 +327,7 @@ function App() {
 
         {/* === MINDSET & LESSONS TAB === */}
         <div className={`tab-content${activeTab === 'tab-mindset' ? ' active' : ''}`}>
-          <MindsetPanel />
+          <MindsetPanel profile={profile} onUpdateProfile={updateProfile} />
         </div>
 
         {/* === JOURNAL TAB === */}

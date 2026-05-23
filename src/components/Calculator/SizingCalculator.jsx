@@ -1,8 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fmtRp, fmt, fmtPct } from '../../lib/utils';
-import { RISK_PCT, MAX_CAP_PCT } from '../../lib/constants';
+import { RISK_PCT, MAX_CAP_PCT, IDR_SIZING } from '../../lib/constants';
 
-export default function SizingCalculator({ capital, tierConfig, onOpenAddModal, onResultsChange }) {
+export default function SizingCalculator({ 
+  capital, 
+  tierConfig, 
+  onOpenAddModal, 
+  onResultsChange,
+  todaysGate,
+  cooldownTimeLeft,
+  ugmStatus
+}) {
   const [ticker, setTicker] = useState('');
   const [entry, setEntry] = useState('');
   const [slPct, setSlPct] = useState('5');
@@ -70,6 +78,16 @@ export default function SizingCalculator({ capital, tierConfig, onOpenAddModal, 
     }
   }
 
+  // Determine active sizing tier based on USD/IDR from Morning Gate
+  const activeSizingTier = useMemo(() => {
+    if (!todaysGate?.usd_idr_rate) return null;
+    const rate = todaysGate.usd_idr_rate;
+    return IDR_SIZING.find(tier => rate >= tier.min && rate <= tier.max) || IDR_SIZING[3];
+  }, [todaysGate]);
+
+  const riskPct = activeSizingTier ? activeSizingTier.riskPct : tierConfig.riskPct;
+  const maxCapPct = activeSizingTier ? activeSizingTier.maxCapPct : MAX_CAP_PCT;
+
   // Main sizing calculation
   useEffect(() => {
     const cap = capital;
@@ -87,9 +105,8 @@ export default function SizingCalculator({ capital, tierConfig, onOpenAddModal, 
       return;
     }
 
-    const riskPct = tierConfig.riskPct;
     const maxLoss = cap * (riskPct / 100);
-    const maxPosValue = cap * MAX_CAP_PCT;
+    const maxPosValue = cap * maxCapPct;
     const diff = e - s;
     const slPercent = (diff / e) * 100;
 
@@ -125,25 +142,41 @@ export default function SizingCalculator({ capital, tierConfig, onOpenAddModal, 
     }
 
     // Alert logic
+    let warningMsg = '';
+    let warningType = 'success';
+
+    if (todaysGate?.focus_score && todaysGate.focus_score <= 7) {
+      warningType = 'warning';
+      warningMsg = `⚠️ Low Focus today (${todaysGate.focus_score}/10). Trade defensively with 1 position cap. `;
+    }
+
     if (slPercent < 2.5) {
       setAlertInfo({
         type: 'warning',
-        text: `⚠ SL terlalu ketat (${slPercent.toFixed(1)}%). Widen SL or accept noise risk.`,
+        text: warningMsg + `⚠ SL terlalu ketat (${slPercent.toFixed(1)}%). Widen SL or accept noise risk.`,
       });
     } else if (posValUncapped > maxPosValue) {
       setAlertInfo({
         type: 'danger',
-        text: `🚫 Max Position Cap Hit. Position scaled down automatically to ${fmt(cappedLots)} lots.`,
+        text: warningMsg + `🚫 Max Position Cap Hit. Sizing scaled down to ${fmt(cappedLots)} lots (${(maxCapPct * 100).toFixed(0)}% Cap).`,
       });
     } else {
       setAlertInfo({
-        type: 'success',
-        text: `✓ System compliant. Exact risk is ${fmtRp(cappedLots * diff)}.`,
+        type: warningType,
+        text: warningMsg || `✓ System compliant. Exact risk is ${fmtRp(cappedLots * diff)}.`,
       });
     }
-  }, [entry, sl, tp1, tp2, capital, tierConfig, onResultsChange]);
+  }, [entry, sl, tp1, tp2, capital, riskPct, maxCapPct, onResultsChange, todaysGate]);
 
   function handleAddToTracker() {
+    if (cooldownTimeLeft > 0) {
+      alert('Cannot log trades during revenge cooldown lockout.');
+      return;
+    }
+    if (ugmStatus?.isObservationMode) {
+      alert(`Cannot execute trades: ${ugmStatus.currentClass || 'UGM block active'}`);
+      return;
+    }
     if (!results || !ticker) {
       alert('Please fill in ticker and calculate sizing first.');
       return;
@@ -157,6 +190,8 @@ export default function SizingCalculator({ capital, tierConfig, onOpenAddModal, 
       tp2_price: parseFloat(tp2) || 0,
     });
   }
+
+  const isLocked = cooldownTimeLeft > 0 || ugmStatus?.isObservationMode;
 
   return (
     <div className="card">
@@ -263,7 +298,10 @@ export default function SizingCalculator({ capital, tierConfig, onOpenAddModal, 
             <div className="result-box danger">
               <div className="result-label">Max Rugi</div>
               <div className="result-val">{fmtRp(results.maxLoss)}</div>
-              <div className="result-sub">{tierConfig.riskPct}% Modal</div>
+              <div className="result-sub">
+                {riskPct.toFixed(2)}% Modal 
+                {activeSizingTier && <span style={{ color: 'var(--accent)', marginLeft: 4 }} title="Locked based on USD/IDR rate">🔒</span>}
+              </div>
             </div>
             <div className="result-box success">
               <div className="result-label">Jumlah Saham</div>
@@ -290,8 +328,23 @@ export default function SizingCalculator({ capital, tierConfig, onOpenAddModal, 
         </>
       )}
 
-      <button className="btn" onClick={handleAddToTracker}>
-        + Log Position to Tracker
+      <button 
+        className="btn" 
+        onClick={handleAddToTracker}
+        disabled={isLocked}
+        style={{
+          background: isLocked ? 'var(--bg-secondary)' : 'var(--accent)',
+          border: isLocked ? '1px solid var(--border)' : '1px solid var(--accent)',
+          cursor: isLocked ? 'not-allowed' : 'pointer',
+          opacity: isLocked ? 0.6 : 1,
+          marginTop: 16
+        }}
+      >
+        {cooldownTimeLeft > 0 
+          ? `🔒 Revenge Lockout (${Math.floor(cooldownTimeLeft / 60)}m ${cooldownTimeLeft % 60}s)` 
+          : ugmStatus?.isObservationMode 
+            ? `🔒 ${ugmStatus.currentClass || 'UGM Block active'}`
+            : '+ Log Position to Tracker'}
       </button>
     </div>
   );

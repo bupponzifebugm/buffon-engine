@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
-import { fmtRp } from '../../lib/utils';
+import { fmtRp, fmtPct } from '../../lib/utils';
 import { EMOTIONS } from '../../lib/constants';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, Award } from 'lucide-react';
 
 function formatCompactRp(val) {
   if (val === 0) return 'Rp 0';
@@ -16,7 +16,7 @@ function formatCompactRp(val) {
   return `${sign}Rp ${val}`;
 }
 
-export default function AnalyticsDashboard({ positions }) {
+export default function AnalyticsDashboard({ positions, cleanStreak = 0, currentTierKey = 'survival_10m' }) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const monthYearLabel = useMemo(() => {
@@ -116,6 +116,86 @@ export default function AnalyticsDashboard({ positions }) {
     return cells;
   }, [positions, currentDate]);
 
+  // Equity Curve Point Calculations
+  const sortedPositions = useMemo(() => {
+    return [...positions].reverse();
+  }, [positions]);
+
+  const chartPoints = useMemo(() => {
+    let current = 0;
+    const pts = [0];
+    sortedPositions.forEach(p => {
+      current += (p.pnl || 0);
+      pts.push(current);
+    });
+    return pts;
+  }, [sortedPositions]);
+
+  const chartDetails = useMemo(() => {
+    const w = 600;
+    const h = 180;
+    const pad = 20;
+
+    const maxVal = Math.max(...chartPoints, 100_000);
+    const minVal = Math.min(...chartPoints, -100_000);
+    const range = maxVal - minVal || 1;
+
+    const linePoints = chartPoints.map((val, idx) => {
+      const x = pad + (idx / (chartPoints.length - 1 || 1)) * (w - 2 * pad);
+      const y = h - pad - ((val - minVal) / range) * (h - 2 * pad);
+      return { x, y, val };
+    });
+
+    const zeroY = h - pad - ((0 - minVal) / range) * (h - 2 * pad);
+
+    const pathD = linePoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+    
+    // Close the area path down to the zeroY line
+    const areaD = linePoints.length > 0
+      ? `M ${linePoints[0].x.toFixed(1)} ${zeroY.toFixed(1)} L ${linePoints.map(p => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' L ')} L ${linePoints[linePoints.length - 1].x.toFixed(1)} ${zeroY.toFixed(1)} Z`
+      : '';
+
+    return {
+      width: w,
+      height: h,
+      pathD,
+      areaD,
+      zeroY,
+      netProfit: chartPoints[chartPoints.length - 1] || 0,
+      points: linePoints
+    };
+  }, [chartPoints]);
+
+  // Upgrade Runway Stats
+  const runwayStats = useMemo(() => {
+    const currentStreak = cleanStreak || 0;
+    let target = 0;
+    let nextTierName = '';
+
+    if (currentTierKey === 'survival_10m') {
+      target = 10;
+      nextTierName = 'Step 1 (Rp 15M)';
+    } else if (currentTierKey === 'step1_15m') {
+      target = 20;
+      nextTierName = 'Step 2 (Rp 20M)';
+    } else if (currentTierKey === 'step2_20m') {
+      target = 30;
+      nextTierName = 'Full Deployment (Rp 25M)';
+    } else {
+      return { isMax: true };
+    }
+
+    const remaining = Math.max(0, target - currentStreak);
+    return {
+      isMax: false,
+      nextTierName,
+      target,
+      current: currentStreak,
+      remaining,
+      pct: Math.min(100, (currentStreak / target) * 100),
+    };
+  }, [currentTierKey, cleanStreak]);
+
   // Emotion PnL Analytics
   const emotionStats = useMemo(() => {
     const stats = {};
@@ -149,10 +229,147 @@ export default function AnalyticsDashboard({ positions }) {
     return { count: violationCount, loss: violationLoss };
   }, [positions]);
 
+  const finalCumulativePnl = chartDetails.netProfit;
+
   return (
     <div>
-      {/* ── Monthly Calendar Heatmap ── */}
-      <div className="card">
+      {/* ── TOP SECTION: SVG EQUITY CURVE & UPGRADE RUNWAY ── */}
+      <div className="grid-2" style={{ marginBottom: 20 }}>
+        {/* Equity Curve Card */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="card-title">
+            <TrendingUp size={16} style={{ color: 'var(--accent)' }} />
+            Performance Equity Curve
+          </div>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Net PnL Cumulative</span>
+            <strong style={{
+              fontSize: 24,
+              fontWeight: 800,
+              color: finalCumulativePnl > 0 ? 'var(--success)' : finalCumulativePnl < 0 ? 'var(--danger)' : 'var(--text-primary)',
+              fontFamily: 'var(--font-mono)'
+            }}>
+              {finalCumulativePnl > 0 ? '+' : ''}{fmtRp(finalCumulativePnl)}
+            </strong>
+          </div>
+
+          <div style={{ flex: 1, position: 'relative', background: 'var(--bg-primary)', borderRadius: 6, border: '1px solid var(--border)', overflow: 'hidden', padding: 8 }}>
+            <svg 
+              viewBox={`0 0 ${chartDetails.width} ${chartDetails.height}`} 
+              style={{ width: '100%', height: 'auto', display: 'block' }}
+            >
+              <defs>
+                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={finalCumulativePnl >= 0 ? 'var(--success)' : 'var(--danger)'} stopOpacity="0.18" />
+                  <stop offset="100%" stopColor={finalCumulativePnl >= 0 ? 'var(--success)' : 'var(--danger)'} stopOpacity="0.00" />
+                </linearGradient>
+              </defs>
+
+              {/* Zero-Reference Line */}
+              <line 
+                x1="20" y1={chartDetails.zeroY} 
+                x2="580" y2={chartDetails.zeroY} 
+                stroke="var(--border-strong)" 
+                strokeWidth="1.2" 
+                strokeDasharray="4 4" 
+              />
+              <text 
+                x="24" y={chartDetails.zeroY - 4} 
+                fill="var(--text-secondary)" 
+                fontSize="9" 
+                fontWeight="700" 
+                opacity="0.6"
+              >
+                BE Reference
+              </text>
+
+              {/* Filled Area Gradient */}
+              {chartDetails.areaD && (
+                <path d={chartDetails.areaD} fill="url(#areaGrad)" />
+              )}
+
+              {/* Solid Curve Line */}
+              {chartDetails.pathD && (
+                <path 
+                  d={chartDetails.pathD} 
+                  fill="none" 
+                  stroke={finalCumulativePnl >= 0 ? 'var(--success)' : 'var(--danger)'} 
+                  strokeWidth="2.5" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                />
+              )}
+
+              {/* Node Circles */}
+              {chartDetails.points.map((p, i) => (
+                <circle 
+                  key={i} 
+                  cx={p.x} 
+                  cy={p.y} 
+                  r={chartDetails.points.length > 30 ? '1.5' : '3'} 
+                  fill={p.val >= 0 ? 'var(--success)' : 'var(--danger)'} 
+                  stroke="var(--bg-primary)" 
+                  strokeWidth="1" 
+                  opacity="0.9"
+                />
+              ))}
+            </svg>
+          </div>
+        </div>
+
+        {/* Upgrade Runway Progress Card */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div className="card-title">
+            <Award size={16} style={{ color: 'var(--purple)' }} />
+            Capital Upgrade Runway
+          </div>
+
+          {runwayStats?.isMax ? (
+            <div style={{ textAlign: 'center', padding: '32px 0', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ fontSize: 48, marginBottom: 8 }}>👑</div>
+              <strong style={{ fontSize: 16, color: 'var(--success)' }}>FULL DEPLOYMENT TIER</strong>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+                You are at the maximum capital tier. Preserve discipline to protect your capital.
+              </p>
+            </div>
+          ) : (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+                <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                  Next Tier: <strong>{runwayStats.nextTierName}</strong>
+                </span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--purple)' }}>
+                  {runwayStats.current} / {runwayStats.target} Clean
+                </span>
+              </div>
+
+              {/* Progress Bar Container */}
+              <div style={{ height: 8, background: 'var(--border)', borderRadius: 4, overflow: 'hidden', marginBottom: 16 }}>
+                <div style={{
+                  height: '100%',
+                  width: `${runwayStats.pct}%`,
+                  background: 'var(--purple)',
+                  borderRadius: 4,
+                  transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+                }} />
+              </div>
+
+              <div style={{ background: 'var(--bg-primary)', padding: '12px 14px', borderRadius: 6, border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, color: 'var(--text-primary)' }}>
+                  Streak Progress:
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  You need <strong style={{ color: 'var(--purple)' }}>{runwayStats.remaining} more</strong> consecutive clean trades without rules violations to unlock your next capital limit upgrade. Keep executing the system.
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── MIDDLE SECTION: MONTHLY HEATMAP CALENDAR ── */}
+      <div className="card" style={{ marginBottom: 20 }}>
         <div className="calendar-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div className="card-title" style={{ margin: 0 }}>PnL Heatmap Calendar</div>
           <div className="calendar-nav" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -265,6 +482,7 @@ export default function AnalyticsDashboard({ positions }) {
         </div>
       </div>
 
+      {/* ── BOTTOM SECTION: EMOTION ANALYTICS & VIOLATION COST ── */}
       <div className="grid-2">
         <div className="card">
           <div className="card-title">Emotion PnL Analytics</div>

@@ -47,3 +47,7 @@ DROP POLICY IF EXISTS "Users can manage own confident receipts" ON confident_rec
 CREATE POLICY "Users can manage own confident receipts"
   ON confident_receipts FOR ALL
   USING (auth.uid() = user_id);
+
+-- 4. ADD ACADEMIC AND HOLIDAY SCHEDULES TO PROFILES
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS class_schedule JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS observed_holidays JSONB DEFAULT '[]'::jsonb;

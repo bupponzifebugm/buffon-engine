@@ -50,6 +50,8 @@ export default function AlertCenter({
   monthlyPnl,
   tierConfig,
   positions,
+  cooldownTimeLeft,
+  ugmStatus
 }) {
   if (!todaysGate) {
     return (
@@ -87,12 +89,12 @@ export default function AlertCenter({
     }
   }
 
-  // 3. Macro warning
+  // 3. Macro warning (added to list as fallback; main alert is displayed in the custom banner below)
   if (todaysGate.macro_env === 'red') {
     alerts.push({
       level: 'danger',
       icon: <AlertTriangle size={16} />,
-      text: '🔴 Macro is RED. Defensive only. 2-3% profit max. Wait 1hr after 09:00 before any entry.',
+      text: '🔴 Macro is RED. Wait 1hr after 09:00 before any entry.',
     });
   }
 
@@ -177,14 +179,14 @@ export default function AlertCenter({
     }
   }
 
-  // 6. Stockbit/Ajaib reminder (always show, subtle)
+  // 6. Stockbit/Ajaib reminder
   alerts.push({
     level: 'info',
     icon: <Clock size={16} />,
     text: 'STOCKBIT = Scalp/Intraday | AJAIB = Invest Only. Never mix.',
   });
 
-  // 7. Life discipline (random rotation based on day)
+  // 7. Life discipline
   const dayOfYear = Math.floor(
     (new Date() - new Date(new Date().getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24)
   );
@@ -195,14 +197,110 @@ export default function AlertCenter({
     text: todayQuote,
   });
 
+  const isMarketBad = todaysGate.macro_env === 'red';
+
   return (
-    <div className="alert-center">
-      {alerts.map((alert, idx) => (
-        <div key={idx} className={`alert-item ${alert.level}`}>
-          {alert.icon}
-          <span>{alert.text}</span>
+    <div className="alert-center-wrapper">
+      {/* ── MARKET BAD BANNER ── */}
+      {isMarketBad && (
+        <div className="market-alert-banner" style={{
+          background: 'rgba(184, 75, 75, 0.12)',
+          border: '1px solid var(--danger)',
+          borderRadius: '8px',
+          padding: '16px 20px',
+          marginBottom: '16px',
+          color: 'var(--text-primary)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+            <span style={{
+              background: 'var(--danger)',
+              color: '#fff',
+              fontSize: '10px',
+              fontWeight: 800,
+              padding: '2px 8px',
+              borderRadius: '4px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>NO TRADE TODAY</span>
+            <strong style={{ fontSize: '15px', color: 'var(--danger)', fontFamily: 'var(--font-serif)' }}>
+              🚫 Critical Macro Environment is RED
+            </strong>
+          </div>
+          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+            Intraday execution is locked. If you absolutely must take action: 
+            <strong style={{ color: 'var(--text-primary)' }}> BSJP Mode only</strong> (Beli Siang Jual Pagi) under two conditions:
+          </p>
+          <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px', fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+            <li>You have clear conviction that tomorrow is a red/down day (for short targets/hedges).</li>
+            <li>AlgoTrade bot signals (Score &ge; 80) explicitly agree with the BSJP entry.</li>
+          </ul>
         </div>
-      ))}
+      )}
+
+      {/* ── REVENGE TRADING LOCKOUT TIMER ── */}
+      {cooldownTimeLeft > 0 && (
+        <div className="cooldown-alert-banner" style={{
+          background: 'rgba(219, 143, 83, 0.12)',
+          border: '1px solid var(--warning)',
+          borderRadius: '8px',
+          padding: '16px 20px',
+          marginBottom: '16px',
+          color: 'var(--text-primary)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Clock size={18} style={{ color: 'var(--warning)', animation: 'pulse 1.5s infinite' }} />
+              <strong style={{ fontSize: '14px' }}>⚠️ REVENGE TRADING COOLDOWN ACTIVE</strong>
+            </div>
+            <span style={{ fontSize: '18px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--warning)' }}>
+              {Math.floor(cooldownTimeLeft / 60).toString().padStart(2, '0')}:{(cooldownTimeLeft % 60).toString().padStart(2, '0')}
+            </span>
+          </div>
+          <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
+            System locked following a loss or violation. Step away from the screens. Re-establish calm mindset.
+          </p>
+        </div>
+      )}
+
+      {/* ── UGM ACADEMIC BLOCK BANNER ── */}
+      {ugmStatus?.isObservationMode && (
+        <div className="ugm-alert-banner" style={{
+          background: 'rgba(122, 99, 153, 0.12)',
+          border: '1px solid var(--purple)',
+          borderRadius: '8px',
+          padding: '16px 20px',
+          marginBottom: '16px',
+          color: 'var(--text-primary)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{
+              background: 'var(--purple)',
+              color: '#fff',
+              fontSize: '10px',
+              fontWeight: 800,
+              padding: '2px 8px',
+              borderRadius: '4px',
+              textTransform: 'uppercase'
+            }}>OBSERVATION ONLY</span>
+            <strong style={{ fontSize: '14px', color: 'var(--purple)' }}>
+              🎓 UGM Academic Block: {ugmStatus.currentClass}
+            </strong>
+          </div>
+          <p style={{ margin: '6px 0 0 0', fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+            Class schedule or weekend/observation block is currently active. Execution engines are paused. Observe orderbook actions only.
+          </p>
+        </div>
+      )}
+
+      {/* ── Standard Alerts Stack ── */}
+      <div className="alert-center">
+        {alerts.map((alert, idx) => (
+          <div key={idx} className={`alert-item ${alert.level}`}>
+            {alert.icon}
+            <span>{alert.text}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

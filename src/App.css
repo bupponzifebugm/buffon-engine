@@ -1837,3 +1837,13 @@ ul.system-list b {
   opacity: 0.35;
   cursor: not-allowed;
 }
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.pulse {
+  animation: pulse 1.5s infinite ease-in-out;
+}
