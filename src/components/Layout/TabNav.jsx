@@ -1,0 +1,23 @@
+const TABS = [
+  { id: 'tab-execute', label: 'Execution Engine' },
+  { id: 'tab-risk', label: 'Risk & Drawdown' },
+  { id: 'tab-system', label: 'Trading System' },
+  { id: 'tab-journal', label: 'Journal / Notes' },
+  { id: 'tab-quotes', label: 'Daily Quote' },
+];
+
+export default function TabNav({ activeTab, onTabChange }) {
+  return (
+    <div className="tab-nav">
+      {TABS.map(tab => (
+        <button
+          key={tab.id}
+          className={`tab-btn${activeTab === tab.id ? ' active' : ''}`}
+          onClick={() => onTabChange(tab.id)}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
