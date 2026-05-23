@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getTodayString } from '../../lib/utils';
+import { EMOTIONS } from '../../lib/constants';
 
 export default function AddTradeModal({ isOpen, onClose, onSave, prefill }) {
   const [ticker, setTicker] = useState(prefill?.ticker || '');
@@ -10,6 +11,9 @@ export default function AddTradeModal({ isOpen, onClose, onSave, prefill }) {
   const [tp2Price, setTp2Price] = useState(prefill?.tp2_price || '');
   const [status, setStatus] = useState('open');
   const [exitPrice, setExitPrice] = useState('');
+  const [emotion, setEmotion] = useState('calm');
+  const [isViolation, setIsViolation] = useState(false);
+  const [violationReason, setViolationReason] = useState('');
 
   // Reset form when prefill changes
   useEffect(() => {
@@ -22,6 +26,9 @@ export default function AddTradeModal({ isOpen, onClose, onSave, prefill }) {
       setTp2Price(prefill.tp2_price || '');
       setStatus('open');
       setExitPrice('');
+      setEmotion('calm');
+      setIsViolation(false);
+      setViolationReason('');
     } else {
       setTicker('');
       setLots('');
@@ -31,6 +38,9 @@ export default function AddTradeModal({ isOpen, onClose, onSave, prefill }) {
       setTp2Price('');
       setStatus('open');
       setExitPrice('');
+      setEmotion('calm');
+      setIsViolation(false);
+      setViolationReason('');
     }
   }, [prefill]);
 
@@ -67,6 +77,9 @@ export default function AddTradeModal({ isOpen, onClose, onSave, prefill }) {
       status,
       pnl: Math.round(pnl),
       trade_date: getTodayString(),
+      emotion,
+      is_violation: isViolation,
+      violation_reason: isViolation ? violationReason : '',
     });
 
     onClose();
@@ -131,6 +144,62 @@ export default function AddTradeModal({ isOpen, onClose, onSave, prefill }) {
           <div className="field">
             <label>Harga Exit Akhir (Rp)</label>
             <input type="number" value={exitPrice} onChange={e => setExitPrice(e.target.value)} />
+          </div>
+        )}
+
+        {/* ── Emotional State ── */}
+        <div className="field">
+          <label>Emotional State Saat Entry</label>
+          <div className="emotion-grid">
+            {EMOTIONS.map(em => (
+              <button
+                key={em.value}
+                type="button"
+                className={`emotion-tag${emotion === em.value ? ` active ${em.color}` : ''}`}
+                onClick={() => setEmotion(em.value)}
+              >
+                {em.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Violation Toggle ── */}
+        <div className="field">
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={isViolation}
+              onChange={e => setIsViolation(e.target.checked)}
+              style={{ width: 16, height: 16, accentColor: 'var(--danger)' }}
+            />
+            <span style={{ color: isViolation ? 'var(--danger)' : 'var(--text-secondary)' }}>
+              ⚠ This trade violated my system rules
+            </span>
+          </label>
+        </div>
+
+        {isViolation && (
+          <div className="field">
+            <label style={{ color: 'var(--danger)' }}>What rule did you break?</label>
+            <textarea
+              value={violationReason}
+              onChange={e => setViolationReason(e.target.value)}
+              placeholder="e.g., Revenge trade, no SL placed, chased entry, not on watchlist..."
+              rows={2}
+              style={{
+                width: '100%',
+                background: 'var(--danger-bg)',
+                border: '1px solid var(--danger)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--text-primary)',
+                fontFamily: 'var(--font-sans)',
+                fontSize: 14,
+                padding: '11px 14px',
+                outline: 'none',
+                resize: 'vertical',
+              }}
+            />
           </div>
         )}
 

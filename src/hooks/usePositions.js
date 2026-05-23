@@ -43,6 +43,9 @@ export function usePositions(user) {
         exit_price: pos.exit_price,
         pnl: pos.pnl,
         trade_date: pos.trade_date,
+        emotion: pos.emotion || 'calm',
+        is_violation: pos.is_violation || false,
+        violation_reason: pos.violation_reason || '',
       })
       .select()
       .single();

@@ -100,3 +100,161 @@ export const STATUS_CONFIG = {
   closed: { label: 'Closed',   className: 'st-closed' },
   sl:     { label: 'SL Hit',   className: 'st-sl' },
 };
+
+// ─── IDR SIZING TIERS (Thesis v3.1) ───
+export const IDR_SIZING = [
+  { min: 17500, max: Infinity, label: 'SURVIVAL', riskPct: 0.5, maxCapPct: 0.25 },
+  { min: 17000, max: 17500, label: 'HIGH RISK', riskPct: 0.75, maxCapPct: 0.30 },
+  { min: 16500, max: 17000, label: 'ELEVATED', riskPct: 0.85, maxCapPct: 0.35 },
+  { min: 0, max: 16500, label: 'FAVORABLE', riskPct: 1.0, maxCapPct: 0.40 },
+];
+
+// ─── 12 BIGGEST LOSS PATTERNS ───
+export const MISTAKE_TYPES = [
+  'Revenge trading after any loss',
+  'Trading red/news days without waiting 1 hour',
+  'Buying at pucuk (chasing entries)',
+  'SL not placed immediately after fill',
+  'SL too thin (inside daily noise)',
+  'Averaging down when thesis goes wrong',
+  'Following AlgoTrade without own conviction',
+  'Position size too large',
+  'Choosing wrong ticker in right sector',
+  'Mixing Ajaib invest with Stockbit scalp',
+  'Comparing to others / FOMO entries',
+  'Not moving SL to breakeven after TP1',
+];
+
+// ─── EMOTION TAGS ───
+export const EMOTIONS = [
+  { value: 'calm', label: 'Calm 😌', color: 'success' },
+  { value: 'focused', label: 'Focused 🎯', color: 'success' },
+  { value: 'fomo', label: 'FOMO 😰', color: 'danger' },
+  { value: 'greedy', label: 'Greedy 🤑', color: 'warning' },
+  { value: 'fearful', label: 'Fearful 😨', color: 'danger' },
+  { value: 'impatient', label: 'Impatient 😤', color: 'warning' },
+  { value: 'bored', label: 'Bored 😴', color: 'purple' },
+  { value: 'revenge', label: 'Revenge 🔥', color: 'danger' },
+];
+
+// ─── UNFUCK UR MINDSET — 4 CORE SHIFTS ───
+export const MINDSET_SHIFTS = [
+  {
+    title: '1. Detach and Extend the Timeline',
+    points: [
+      'Detach from initial losses. The losses are where we grow.',
+      'See every single loss as a lesson, not a verdict.',
+      'If I hadn\'t taken that loss, I wouldn\'t have learned anything from it.',
+      'Mistakes are good things AS LONG as we grow from them.',
+      'Everyone sucks at a skill they\'re trying to learn.',
+      'Room for improvement. Be more efficient. Taking those shots.',
+    ],
+  },
+  {
+    title: '2. Stop Being a Bitch',
+    points: [
+      'There is no improvement if u kept crying at ur losses.',
+      'What has happened has happened. Stop looking at the past.',
+      'Every body has problems. Stop complaining. Stop pointing fingers.',
+      '"This is the position I\'m in. How can I make this better?"',
+      'You are the person that determines your future.',
+      'Take action. Take the blame. Drop ego. Change the trajectory of your life.',
+    ],
+  },
+  {
+    title: '3. Stop Seeking Perfectionism (It\'s Procrastination)',
+    points: [
+      '99% of people have massive dreams, waiting for the perfect timing to start.',
+      'It never lines up. There will always be problems.',
+      'Start today. Start imperfect. Start now.',
+      '"I wish I started earlier" — don\'t let that be you.',
+      'Perfectionism in trading = waiting for perfect setup = missing valid setups = no learning.',
+    ],
+  },
+  {
+    title: '4. Build Trading Habits = Build Life Habits',
+    points: [
+      'Trading reflects who you are in life.',
+      'If not discipline in ur life → how would u expect to be consistent in trading?',
+      'Build discipline. Start building it in EVERY single aspect of life.',
+      'Consistent in my life in every single aspect.',
+      'Unconscious behaviour. Start building it now.',
+      'We need to be fully in line with everything we want to do within trading.',
+    ],
+  },
+];
+
+// ─── THE 13 LESSONS ───
+export const THIRTEEN_LESSONS = [
+  { number: 1, title: 'EXPLAIN YOUR EDGE IN 5 MINUTES', description: 'Why does this strategy make money? Who\'s on the other side losing it? What are they doing wrong that you\'re doing right? If you can\'t answer these in 5 min → you don\'t have an edge yet.' },
+  { number: 2, title: 'TRADING TAKES TIME', description: '3-4 years to know if you\'re any good. Reset your expectations and the journey becomes manageable. Timothy Ronald: 10 years. You: 7 months. Do the math.' },
+  { number: 3, title: 'COMFORT AND RETURNS ARE INVERSELY RELATED', description: 'Less comfort = higher returns. High comfort = low returns. That\'s part of the game, not a sign something is wrong. Embrace the discomfort.' },
+  { number: 4, title: 'PROCESS BEATS OUTCOMES', description: 'Good trade + win = edge working ✅\nGood process + loss = this is fine, variance ✅\nBad process + win = DANGEROUS. Most dangerous outcome. ⚠️\nBad process + loss = stop doing this immediately ❌' },
+  { number: 5, title: 'ONE STRATEGY IS UNSTABLE', description: 'A portfolio is a business. Collection of uncorrelated strategies running. Future: diversify beyond intraday IHSG scalping.' },
+  { number: 6, title: 'A MARGINAL TRADER IS ALWAYS IMPROVING', description: 'Not perfect. Not profitable yet. Just improving, every single day. Document. Review. Iterate. That IS the work.' },
+  { number: 7, title: 'POSITION SIZE KILLS MORE ACCOUNTS THAN BAD ENTRIES', description: '1% risk per trade. This is the rule. Survival mode: 0.5% risk. IDR is the modifier. More accounts blown from oversizing than from bad analysis.' },
+  { number: 8, title: 'DRAWDOWNS ARE THE COST OF BEING IN THE GAME', description: 'Every strategy has a worst day. Every trader has a worst month. The question is not whether you\'ll draw down. It\'s whether you survive it. April 2026 cost: Rp 238,000. That was tuition. Worth it.' },
+  { number: 9, title: 'OVERFITTING IS THE ENEMY', description: 'When you tune your strategy so perfectly to past data it has no predictive power. Don\'t optimize for April 2026 conditions. Stay adaptive.' },
+  { number: 10, title: 'EDGES DECAY ALWAYS', description: 'Have to adapt and find new ones. AlgoTrade bot evolving → stay on top of new data sources. What works today may not work in 12 months. Keep researching.' },
+  { number: 11, title: 'DEPLOYED BEATS A BEAUTIFUL BACKTEST', description: 'Just get it live. Do it anyway. Live markets teach things no idea ever will. You are already deployed. Keep going.' },
+  { number: 12, title: 'TRADING IS A RESEARCH GAME', description: 'You\'re a researcher who occasionally hits buttons. Find edge → test → deploy → monitor → iterate. Be a researcher. That mindset shift changes everything.' },
+  { number: 13, title: 'AUTOMATE EARLIER THAN YOU THINK YOU SHOULD', description: 'Consistent execution. Emotional detachment. Multiple strategies. Somewhere along the way it actually starts working. Doesn\'t depend on mood.' },
+];
+
+// ─── MINDSET QUOTES (FROM HANDWRITTEN NOTEBOOK) ───
+export const MINDSET_QUOTES = [
+  'We are not getting rich in seconds, in days, in months. But in years.',
+  'Trade so you can still trade another day.',
+  'Cut loss adalah self love.',
+  'Root cause of all execution problems: fuzzy definition of valid.',
+  'TP1 does not mean take profit. It means make the trade free.',
+  'The system already wins if executed. The only variable that breaks it is you.',
+  'Timothy Ronald did 10 years. I am 7 months in.',
+  'Comparison kills execution. Their timeline is not mine.',
+  'Dropped out of med school. Gap year. Felt like a failure. Got into UGM. This is the same journey.',
+  'If u not discipline in ur life, how would u expect to be consistent in trading?',
+  'Bad process + win = most dangerous outcome.',
+  'Deployed beats a beautiful backtest. Just get it live.',
+  'Trading is a research game. You\'re a researcher who occasionally hits buttons.',
+  'HE WHO KNOWS WHEN TO FIGHT AND WHEN NOT TO FIGHT, WILL BE VICTORIOUS. — Sun Tzu',
+  'And for my final mission is to prove to myself that I can truly make my delusions a reality.',
+  'SL hit = plan executed = that is a WIN.',
+];
+
+// ─── DAILY OPERATING CHECKLIST (10 STEPS) ───
+export const DAILY_CHECKLIST = [
+  'Focus score 7+? Below 7 = close app, no trade.',
+  'USD/IDR rate checked? Determine today\'s risk % from IDR table.',
+  'Wall Street green/mixed? All red = defensive only.',
+  'Overnight news clear? Bad news = wait 1hr after 09:00.',
+  '2 tickers pre-planned with entry/SL/TP written from last night?',
+  'Lot size calculated from formula?',
+  'Orderbook readable for target ticker?',
+  'Bot signal still valid, not extended (not already +10%+)?',
+  'SL placed IMMEDIATELY after fill?',
+  'TP1 hit: sold 40% AND moved SL to breakeven? (both, not one)',
+];
+
+// ─── ALGOTRADE BOT PRIORITY STACK (10 RULES) ───
+export const BOT_STACK_RULES = [
+  { rule: 'Score ≥ 80', detail: 'Skip if < 75, no exceptions.' },
+  { rule: 'Stage: EARLY_SETUP or EARLY_CONFIRM', detail: 'LATE / EXTENDED / DISTRIBUTION = skip.' },
+  { rule: 'Asing: BUYING or Neutral', detail: 'SELLING = skip always.' },
+  { rule: 'Bandar net %: positive', detail: '+0.1% of market cap minimum.' },
+  { rule: 'Top buyers: AK, CC, XL, OD, MU', detail: 'MG dominant alone = warning.' },
+  { rule: 'YP not in top 3 buyers', detail: 'YP #1 = retail late signal = skip.' },
+  { rule: 'Buyer count < Seller count but net buy', detail: '= Accumulation signal.' },
+  { rule: 'Volume: 2x+ above 5-day average', detail: 'Confirms institutional interest.' },
+  { rule: 'Flow score: 60+', detail: 'If shown by bot.' },
+  { rule: 'Bot SL: 4-7% below entry', detail: 'Tighter than 2.5% = skip.' },
+];
+
+// ─── LIFE DISCIPLINE REMINDERS ───
+export const LIFE_REMINDERS = [
+  'Target sleep 11:30 PM, wake 08:00 AM. Fasting 17/7. Life discipline = trading discipline.',
+  'Timothy Ronald did 10 years. You are 7 months in. Respect the timeline.',
+  'Active trading window: 08:30 – 10:30 WIB. Hard close 09:30 class days, 11:00 free days.',
+  'Monday blocked (workshop 7:30 AM) → observation only. No trading.',
+  'UGM Economics student first, trader second. Never let trading affect academics.',
+  'Discipline in your life = discipline in trading. Build it in every single aspect.',
+];

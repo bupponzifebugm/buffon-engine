@@ -1,0 +1,62 @@
+13 lesson
+
+1. explain your edge in 5 minutes
+
+a. why does this strategy make money?
+
+b. whos on the other side losiong it
+
+c. what are the ydoing wrong that youre doing right
+
+1. trading takes time
+
+3-4 years to know if youre any good. reset your expectatations and the journey become manageable 
+
+1. Comforts and returns are inversely related
+
+less comfort u have, returns gonna be high, high comforst, return gonna be low
+
+thats part of the game not a sign something is wrong. 
+
+1. process beat outcomes
+
+a good trande can lose. a bad trade can win
+
+good process+ win , edge working
+good priocess + lost , this is fine, variance
+
+bad process+ win = bad , most dangerous outcome
+
+bad process+ lose= stop doing
+
+1. one strategy is unstable.
+
+a portfolio is a business. collection of uncorrelated ones running. 
+
+1. a marginal trader is always improving. 
+2. position size kills more accounts than bad entries. 1% risk per trade
+3. drawdowns are the cost of beign in the game
+
+every strategy has a worst day, everytrader has a worst month
+
+1. overfititing is the enemy
+
+when u tune ur strateguy so perfectly to past data that has no predictifve power on future data
+
+1. edges decay always
+
+have to adapat and find new ones, adapt
+
+1. deployed beats a beautiful backtest
+
+just get it live. do it anyway. live markets teach you thigns no idea ever will.
+
+1. trading is a research game thats it thats the whole thing
+ur a research whio occasionally hits button
+find edge → test→ deploy_> monitor →iterate
+
+be a researcher, that mindset shift changes everythig
+
+1. automate earlier than you think you should
+
+consistent exectuion, emotional deteachment, multiple strategies. soemwhere along the way it actually started working. doesnt depend on mood.
