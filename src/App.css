@@ -869,6 +869,41 @@ ul.system-list b {
   gap: 10px;
 }
 
+.journal-search {
+  display: flex;
+  align-items: center;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  transition: border-color 0.2s;
+}
+
+.journal-search:focus-within {
+  border-color: var(--accent);
+}
+
+.journal-search-icon {
+  color: var(--text-secondary);
+  margin-right: 8px;
+}
+
+.journal-search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  width: 100%;
+  font-family: var(--font-sans);
+}
+
+.journal-search-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
 .journal-list {
   flex: 1;
   overflow-y: auto;

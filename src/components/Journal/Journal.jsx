@@ -1,11 +1,26 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Plus, Save, Trash2, Image, Type, Bold, Italic, List } from 'lucide-react';
+import { Plus, Save, Trash2, Image, Type, Bold, Italic, List, Search } from 'lucide-react';
 
 export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, onUpdateNote, onDeleteNote, onUploadImage }) {
   const editorRef = useRef(null);
   const fileInputRef = useRef(null);
   const [saveStatus, setSaveStatus] = useState('');
   const debounceRef = useRef(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter notes based on search query
+  const filteredNotes = notes.filter(note => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    const titleMatch = (note.title || '').toLowerCase().includes(q);
+    const contentMatch = (note.content || '').toLowerCase().includes(q);
+    const dateStr = new Date(note.created_at || note.id).toLocaleDateString('id-ID', {
+      day: 'numeric', month: 'short', year: 'numeric'
+    }).toLowerCase();
+    const dateMatch = dateStr.includes(q);
+    
+    return titleMatch || contentMatch || dateMatch;
+  });
 
   // When activeNote changes, update editor content
   useEffect(() => {
@@ -130,16 +145,28 @@ export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, o
         <button className="btn" onClick={onCreateNote} style={{ margin: 0, padding: 10 }}>
           <Plus size={14} /> New Journal Entry
         </button>
-        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginTop: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginTop: 12, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           My Notes
         </div>
+        
+        <div className="journal-search">
+          <Search size={14} className="journal-search-icon" />
+          <input
+            type="text"
+            placeholder="Search notes..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="journal-search-input"
+          />
+        </div>
+
         <div className="journal-list">
-          {notes.length === 0 ? (
+          {filteredNotes.length === 0 ? (
             <div style={{ fontSize: 12, color: 'var(--text-secondary)', padding: 12, textAlign: 'center' }}>
-              No notes yet.
+              {searchQuery ? 'No matching notes found.' : 'No notes yet.'}
             </div>
           ) : (
-            notes.map(note => (
+            filteredNotes.map(note => (
               <div
                 key={note.id}
                 className={`journal-item${activeNote?.id === note.id ? ' active' : ''}`}
