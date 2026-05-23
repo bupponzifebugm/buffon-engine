@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Plus, Save, Trash2, Image, Type, Bold, Italic, List, Search } from 'lucide-react';
+import { JOURNAL_TEMPLATES } from '../../lib/constants';
 
 export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, onUpdateNote, onDeleteNote, onUploadImage }) {
   const editorRef = useRef(null);
@@ -138,6 +139,33 @@ export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, o
     e.preventDefault();
   }
 
+  const applyTemplate = (label) => {
+    if (!activeNote) return;
+    const template = JOURNAL_TEMPLATES.find(t => t.label === label);
+    if (!template) return;
+
+    const todayStr = new Date().toLocaleDateString('id-ID', {
+      day: 'numeric', month: 'long', year: 'numeric'
+    });
+    const renderedContent = template.content.replace('${date}', todayStr);
+
+    if (editorRef.current) {
+      const currentContent = editorRef.current.innerHTML.trim();
+      if (currentContent && currentContent !== '<br>' && currentContent !== '') {
+        if (!confirm('This will overwrite current journal content. Continue?')) {
+          return;
+        }
+      }
+      editorRef.current.innerHTML = renderedContent;
+      const newTitle = `${template.label} - ${todayStr}`;
+      const titleEl = document.getElementById('noteTitle');
+      if (titleEl) {
+        titleEl.value = newTitle;
+      }
+      onUpdateNote(activeNote.id, { title: newTitle, content: renderedContent });
+    }
+  };
+
   return (
     <div className="journal-layout">
       {/* Sidebar */}
@@ -223,6 +251,35 @@ export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, o
               style={{ display: 'none' }}
               onChange={handleImageUpload}
             />
+
+            <select
+              onChange={(e) => {
+                const val = e.target.value;
+                if (!val) return;
+                applyTemplate(val);
+                e.target.value = "";
+              }}
+              defaultValue=""
+              className="template-select"
+              style={{
+                fontSize: 11,
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 4,
+                padding: '2px 6px',
+                cursor: 'pointer',
+                outline: 'none',
+                height: 24,
+                display: 'inline-flex',
+                alignItems: 'center'
+              }}
+            >
+              <option value="">⚡ Apply Template</option>
+              {JOURNAL_TEMPLATES.map(t => (
+                <option key={t.label} value={t.label}>{t.label}</option>
+              ))}
+            </select>
 
             <div style={{ flex: 1 }} />
             <button

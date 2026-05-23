@@ -8,6 +8,7 @@ import { useChallenge } from './hooks/useChallenge';
 import { useMorningGate } from './hooks/useMorningGate';
 import { useJournal } from './hooks/useJournal';
 import { useMistakes } from './hooks/useMistakes';
+import { useConfidentReceipts } from './hooks/useConfidentReceipts';
 
 // Components
 import AuthGate from './components/Auth/AuthGate';
@@ -26,6 +27,8 @@ import MistakesLog from './components/Mistakes/MistakesLog';
 import MindsetPanel from './components/Mindset/MindsetPanel';
 import Journal from './components/Journal/Journal';
 import DailyQuote from './components/Quotes/DailyQuote';
+import AnalyticsDashboard from './components/Dashboard/AnalyticsDashboard';
+import ConfidentLog from './components/Confident/ConfidentLog';
 
 // Constants
 import { TIERS } from './lib/constants';
@@ -37,6 +40,7 @@ function App() {
   const { todaysGate, isGateCompleted, submitGate, loading: gateLoading } = useMorningGate(user);
   const { notes, activeNote, createNote, openNote, updateNote, deleteNote, uploadImage } = useJournal(user);
   const { mistakes, addMistake, deleteMistake, totalTuition, mostCommonMistake } = useMistakes(user);
+  const { receipts: confidentReceipts, addReceipt: addConfidentReceipt, deleteReceipt: deleteConfidentReceipt } = useConfidentReceipts(user);
 
   const [activeTab, setActiveTab] = useState('tab-execute');
   const [isDark, setIsDark] = useState(() => {
@@ -105,6 +109,14 @@ function App() {
 
   async function handleDeleteMistake(id) {
     await deleteMistake(id);
+  }
+
+  async function handleAddConfidentReceipt(receiptData) {
+    await addConfidentReceipt(receiptData);
+  }
+
+  async function handleDeleteConfidentReceipt(id) {
+    await deleteConfidentReceipt(id);
   }
 
   // Auth loading screen
@@ -184,6 +196,11 @@ function App() {
           </div>
         </div>
 
+        {/* === ANALYTICS & HEATMAP TAB === */}
+        <div className={`tab-content${activeTab === 'tab-analytics' ? ' active' : ''}`}>
+          <AnalyticsDashboard positions={positions} />
+        </div>
+
         {/* === RISK & DRAWDOWN TAB === */}
         <div className={`tab-content${activeTab === 'tab-risk' ? ' active' : ''}`}>
           <PositionsTable
@@ -204,6 +221,16 @@ function App() {
             mistakes={mistakes}
             onAddMistake={handleAddMistake}
             onDeleteMistake={handleDeleteMistake}
+          />
+        </div>
+
+        {/* === CONFIDENT RECEIPTS TAB === */}
+        <div className={`tab-content${activeTab === 'tab-confident' ? ' active' : ''}`}>
+          <ConfidentLog
+            receipts={confidentReceipts}
+            onAddReceipt={handleAddConfidentReceipt}
+            onDeleteReceipt={handleDeleteConfidentReceipt}
+            onUploadImage={uploadImage}
           />
         </div>
 

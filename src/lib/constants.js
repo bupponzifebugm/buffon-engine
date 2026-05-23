@@ -258,3 +258,50 @@ export const LIFE_REMINDERS = [
   'UGM Economics student first, trader second. Never let trading affect academics.',
   'Discipline in your life = discipline in trading. Build it in every single aspect.',
 ];
+
+// ─── MISTAKE SOLUTIONS ───
+export const MISTAKE_SOLUTIONS = {
+  'Revenge trading after any loss': 'Walk away immediately. Revenge position 2 is ALWAYS worse than position 1.',
+  'Trading red/news days without waiting 1 hour': 'Hands off keyboard until 09:30. Let the morning noise settle.',
+  'Buying at pucuk (chasing entries)': 'If you missed the entry zone, move on. Another setup will come.',
+  'SL not placed immediately after fill': 'Stop loss must be placed the exact second the entry order fills. No exceptions.',
+  'SL too thin (inside daily noise)': 'Use the bot ATR SL (4-7%). Do not tighten it manually.',
+  'Averaging down when thesis goes wrong': 'NEVER average down a loser. Cut loss is self-love.',
+  'Following AlgoTrade without own conviction': 'Bot is a filter, not a command. Verify orderbook and logic first.',
+  'Position size too large': 'Check the IDR sizing tier before sizing. Max risk 1%.',
+  'Choosing wrong ticker in right sector': 'Check broker summary for AK/CC accumulation to confirm the leader.',
+  'Mixing Ajaib invest with Stockbit scalp': 'Stockbit = Intraday. Ajaib = Invest. Separate worlds. Do not mix them.',
+  'Comparing to others / FOMO entries': 'Their timeline is not yours. Delete social media during trading hours.',
+  'Not moving SL to breakeven after TP1': 'Once 40% is sold at TP1, SL moves to breakeven immediately.',
+  // Specific entries from notebook
+  'Hesitate and miss entry': 'Pre-set a limit order before the level hits.',
+  'Panic and exit early': 'The "only one reason to exit early" rule: Price closes a full candle below your Stop level. Not a wick.',
+  'Move or ignore Stop loss': 'Hard stop in the platform - not in your head. Put stop losses.',
+  'Enter unplanned trades': 'The 30-second test before any unplanned entry: "Can I explain in one sentence why I pre-planned this entry?" If you can\'t - don\'t enter.',
+};
+
+// ─── JOURNAL TEMPLATES ───
+export const JOURNAL_TEMPLATES = [
+  {
+    label: 'Morning Prep',
+    content: `<h1>Morning Prep: \${date}</h1>
+<h2>1. Macro & Market Regime</h2>
+<ul><li><strong>USD/IDR:</strong> </li><li><strong>Wall Street Close:</strong> </li><li><strong>IHSG Bias:</strong> </li></ul>
+<h2>2. Bot Stack & Watchlist</h2>
+<ul><li><strong>Ticker 1:</strong> (Score: , Stage: , Plan: )</li><li><strong>Ticker 2:</strong> (Score: , Stage: , Plan: )</li></ul>
+<h2>3. Mental Check</h2>
+<p>Focus score: /10. <em>(Remember: IDR determines max risk today).</em></p>`
+  },
+  {
+    label: 'Post-Market Review',
+    content: `<h1>Post-Market Review: \${date}</h1>
+<h2>1. Daily Stats</h2>
+<ul><li><strong>PnL:</strong> Rp </li><li><strong>Trades taken:</strong> </li><li><strong>Win/Loss:</strong> </li></ul>
+<h2>2. Did I follow the system?</h2>
+<p>(Be brutally honest. Did you hit the daily checklist?)</p>
+<h2>3. Biggest Mistake Today</h2>
+<p>(What went wrong? Why?)</p>
+<h2>4. Key Lesson for Tomorrow</h2>
+<p>(...)</p>`
+  }
+];

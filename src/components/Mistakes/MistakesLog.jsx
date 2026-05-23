@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Receipt, Trash2, TrendingDown, AlertTriangle } from 'lucide-react';
-import { MISTAKE_TYPES } from '../../lib/constants';
+import { MISTAKE_TYPES, MISTAKE_SOLUTIONS } from '../../lib/constants';
 import { fmtRp, fmtDate } from '../../lib/utils';
 
 function getMostCommonMistake(mistakes) {
@@ -80,6 +80,11 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake })
           <div className="tuition-stat accent">
             <div className="tuition-stat-value most-common">{mostCommon}</div>
             <div className="tuition-stat-label">Most Common Mistake</div>
+            {mostCommon && mostCommon !== '—' && MISTAKE_SOLUTIONS[mostCommon] && (
+              <div className="tuition-stat-solution" style={{ fontSize: '12px', marginTop: '6px', color: 'var(--accent)', opacity: 0.95, lineHeight: 1.4 }}>
+                <strong>💡 Solution:</strong> {MISTAKE_SOLUTIONS[mostCommon]}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -205,6 +210,20 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake })
                 {m.action_plan && (
                   <div className="mistake-action-plan">
                     <strong>Action plan:</strong> {m.action_plan}
+                  </div>
+                )}
+                {m.mistake_type && MISTAKE_SOLUTIONS[m.mistake_type] && (
+                  <div className="mistake-mapped-solution" style={{
+                    marginTop: '10px',
+                    padding: '8px 12px',
+                    background: 'rgba(239, 68, 68, 0.04)',
+                    borderLeft: '3px solid var(--danger)',
+                    borderRadius: '4px',
+                    fontSize: '12.5px',
+                    lineHeight: '1.4',
+                    color: 'var(--text-primary)'
+                  }}>
+                    <strong>💡 System Solution:</strong> {MISTAKE_SOLUTIONS[m.mistake_type]}
                   </div>
                 )}
               </div>

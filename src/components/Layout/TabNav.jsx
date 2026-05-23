@@ -1,8 +1,10 @@
 const TABS = [
   { id: 'tab-execute', label: 'Execution Engine' },
+  { id: 'tab-analytics', label: 'Analytics & Heatmap' },
   { id: 'tab-risk', label: 'Risk & Drawdown' },
   { id: 'tab-system', label: 'Trading System' },
   { id: 'tab-mistakes', label: 'Mistake Receipts' },
+  { id: 'tab-confident', label: 'Confident Receipts' },
   { id: 'tab-mindset', label: 'Mindset & Lessons' },
   { id: 'tab-journal', label: 'Journal / Notes' },
   { id: 'tab-quotes', label: 'Daily Quote' },

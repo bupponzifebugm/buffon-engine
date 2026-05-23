@@ -26,6 +26,24 @@ CREATE TABLE IF NOT EXISTS mistake_receipts (
 
 ALTER TABLE mistake_receipts ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can manage own mistake receipts" ON mistake_receipts;
 CREATE POLICY "Users can manage own mistake receipts"
   ON mistake_receipts FOR ALL
+  USING (auth.uid() = user_id);
+
+-- 3. CREATE CONFIDENT RECEIPTS TABLE
+CREATE TABLE IF NOT EXISTS confident_receipts (
+  id BIGSERIAL PRIMARY KEY,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL DEFAULT '',
+  description TEXT DEFAULT '',
+  image_url TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE confident_receipts ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can manage own confident receipts" ON confident_receipts;
+CREATE POLICY "Users can manage own confident receipts"
+  ON confident_receipts FOR ALL
   USING (auth.uid() = user_id);

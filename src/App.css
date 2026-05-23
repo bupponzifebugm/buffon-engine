@@ -1728,3 +1728,69 @@ ul.system-list b {
   font-weight: 800;
   margin-bottom: 4px;
 }
+
+/* ── Consistency Heatmap & Analytics ──────────────────────── */
+.heatmap-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.heatmap-box {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  position: relative;
+  cursor: pointer;
+}
+
+.heatmap-box:hover {
+  transform: scale(1.18);
+  box-shadow: 0 0 10px rgba(204, 120, 92, 0.4);
+  z-index: 10;
+}
+
+.heatmap-box.empty {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+}
+
+.heatmap-box.profit {
+  background: var(--success);
+  box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.2);
+}
+
+.heatmap-box.loss {
+  background: var(--danger);
+  box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.2);
+}
+
+.heatmap-box.breakeven {
+  background: var(--border-strong);
+  border: 1px solid var(--border);
+}
+
+/* ── Confident Receipts ───────────────────────────────────── */
+.confident-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.confident-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.confident-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--accent);
+}
+
+.template-select:hover {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
