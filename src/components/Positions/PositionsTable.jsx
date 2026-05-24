@@ -95,6 +95,7 @@ export default function PositionsTable({ positions, onDeletePosition, onClearPos
                 <th>TP1/TP2</th>
                 <th>Status</th>
                 <th>P&L</th>
+                <th>R-Mult</th>
                 <th></th>
               </tr>
             </thead>
@@ -105,6 +106,17 @@ export default function PositionsTable({ positions, onDeletePosition, onClearPos
                 const pnlText = p.pnl !== 0
                   ? (p.pnl > 0 ? '+' : '') + fmtRp(p.pnl)
                   : '—';
+
+                const riskRp = (p.entry_price && p.sl_price && p.lots && p.entry_price > p.sl_price) 
+                  ? (p.entry_price - p.sl_price) * p.lots * 100 
+                  : 0;
+                
+                const tradeR = (riskRp > 0 && p.pnl !== null && p.pnl !== undefined && p.pnl !== 0)
+                  ? (p.pnl / riskRp).toFixed(2)
+                  : null;
+
+                const rColor = tradeR && tradeR > 0 ? 'var(--success)' : tradeR && tradeR < 0 ? 'var(--danger)' : 'var(--text-secondary)';
+                const rText = tradeR ? (tradeR > 0 ? `+${tradeR}R` : `${tradeR}R`) : '—';
 
                 return (
                   <tr key={p.id}>
@@ -120,6 +132,7 @@ export default function PositionsTable({ positions, onDeletePosition, onClearPos
                     </td>
                     <td><span className={`status-pill ${cfg.className}`}>{cfg.label}</span></td>
                     <td style={{ color: pnlColor, fontWeight: 700 }}>{pnlText}</td>
+                    <td style={{ color: rColor, fontWeight: 700, fontSize: 13, fontFamily: 'var(--font-mono)' }}>{rText}</td>
                     <td>
                       <button className="btn-small" onClick={() => onDeletePosition(p.id)}>
                         <Trash2 size={12} />

@@ -229,6 +229,33 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
     return { count: violationCount, loss: violationLoss };
   }, [positions]);
 
+  // R-Multiple Analytics
+  const rStats = useMemo(() => {
+    let totalR = 0;
+    let rWins = [];
+    let rLosses = [];
+
+    positions.forEach(p => {
+      const riskRp = (p.entry_price && p.sl_price && p.lots && p.entry_price > p.sl_price) 
+        ? (p.entry_price - p.sl_price) * p.lots * 100 
+        : 0;
+      
+      if (riskRp > 0 && p.pnl !== null && p.pnl !== undefined && p.pnl !== 0) {
+        const tradeR = p.pnl / riskRp;
+        totalR += tradeR;
+        if (tradeR > 0) rWins.push(tradeR);
+        else if (tradeR < 0) rLosses.push(tradeR);
+      }
+    });
+
+    const avgRWin = rWins.length > 0 ? rWins.reduce((a,b)=>a+b, 0) / rWins.length : 0;
+    const avgRLoss = rLosses.length > 0 ? rLosses.reduce((a,b)=>a+b, 0) / rLosses.length : 0;
+    const winRate = (rWins.length + rLosses.length) > 0 ? rWins.length / (rWins.length + rLosses.length) : 0;
+    const expectancy = (avgRWin * winRate) + (avgRLoss * (1 - winRate));
+
+    return { totalR, avgRWin, avgRLoss, expectancy, count: rWins.length + rLosses.length };
+  }, [positions]);
+
   const finalCumulativePnl = chartDetails.netProfit;
 
   return (
@@ -482,8 +509,41 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
         </div>
       </div>
 
-      {/* ── BOTTOM SECTION: EMOTION ANALYTICS & VIOLATION COST ── */}
-      <div className="grid-2">
+      {/* ── BOTTOM SECTION: R-MULTIPLE, EMOTIONS, & VIOLATIONS ── */}
+      <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+        
+        {/* R-Multiple Stats */}
+        <div className="card" style={{ border: '1px solid var(--accent)', boxShadow: '0 0 12px rgba(204, 120, 92, 0.12)' }}>
+          <div className="card-title" style={{ color: 'var(--accent)' }}>Skill Progress (R-Multiples)</div>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
+            Normalized performance detached from IDR sizing.
+          </p>
+          
+          <div style={{ textAlign: 'center', padding: '12px 0', background: 'var(--bg-primary)', borderRadius: 6, marginBottom: 16, border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>Total R Generated</div>
+            <div style={{ fontSize: 28, fontWeight: 800, color: rStats.totalR >= 0 ? 'var(--success)' : 'var(--danger)', fontFamily: 'var(--font-mono)', margin: '4px 0' }}>
+              {rStats.totalR > 0 ? '+' : ''}{rStats.totalR.toFixed(2)}R
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Across {rStats.count} valid trades</div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Avg Winning Trade</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--success)' }}>+{rStats.avgRWin.toFixed(2)}R</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Avg Losing Trade</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--danger)' }}>{rStats.avgRLoss.toFixed(2)}R</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>System Expectancy</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: rStats.expectancy >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+              {rStats.expectancy > 0 ? '+' : ''}{rStats.expectancy.toFixed(2)}R / trade
+            </span>
+          </div>
+        </div>
+
+        {/* Emotion Analytics */}
         <div className="card">
           <div className="card-title">Emotion PnL Analytics</div>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
