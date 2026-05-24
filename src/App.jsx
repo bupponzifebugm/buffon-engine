@@ -30,6 +30,7 @@ import Journal from './components/Journal/Journal';
 import DailyQuote from './components/Quotes/DailyQuote';
 import AnalyticsDashboard from './components/Dashboard/AnalyticsDashboard';
 import ConfidentLog from './components/Confident/ConfidentLog';
+import TradingCoach from './components/Chat/TradingCoach';
 
 // Constants
 import { TIERS } from './lib/constants';
@@ -365,6 +366,18 @@ function App() {
         onSave={handleSavePosition}
         prefill={addModalPrefill}
         gamificationState={profile?.gamification_state}
+      />
+
+      {/* AI Trading Coach Drawer */}
+      <TradingCoach
+        profile={profile}
+        positions={positions}
+        todaysGate={todaysGate}
+        cleanStreak={cleanStreak}
+        tierConfig={tierConfig}
+        dailyPnl={dailyPnl}
+        weeklyPnl={weeklyPnl}
+        ugmStatus={ugmStatus}
       />
     </div>
   );

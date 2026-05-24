@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Brain, BookOpen, Quote, ChevronDown, ChevronUp, Sparkles, Plus, Trash2, Calendar } from 'lucide-react';
 import { MINDSET_SHIFTS, THIRTEEN_LESSONS, MINDSET_QUOTES } from '../../lib/constants';
+import TiltBreaker from './TiltBreaker';
 
 export default function MindsetPanel({ profile, onUpdateProfile }) {
   // Track which mindset cards are expanded (multiple can be open)
@@ -89,6 +90,11 @@ export default function MindsetPanel({ profile, onUpdateProfile }) {
 
   return (
     <div className="mindset-container">
+      {/* ── Section 0: Emergency Tilt Breaker ── */}
+      <div style={{ marginBottom: 20 }}>
+        <TiltBreaker />
+      </div>
+
       {/* ── Section 1: UGM Academic & Holiday Settings ── */}
       {profile && (
         <div className="card">
@@ -134,6 +140,7 @@ export default function MindsetPanel({ profile, onUpdateProfile }) {
                       value={newClassName} 
                       onChange={e => setNewClassName(e.target.value)} 
                       className="ugm-class-input"
+                      style={{ color: 'var(--text-primary)', backgroundColor: 'var(--bg-tertiary)' }}
                     />
                     <button className="btn" onClick={handleAddClass} style={{ margin: 0, padding: '6px 12px', display: 'flex', alignItems: 'center' }}>
                       <Plus size={14} /> Add

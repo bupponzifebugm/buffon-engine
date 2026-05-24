@@ -2,33 +2,45 @@ import { useState, useEffect } from 'react';
 import { DUO_DIALOGUES } from '../../lib/constants';
 import { Sparkles } from 'lucide-react';
 
+import baddieNeutral from '../../assets/baddie_neutral.jpg';
+import baddieHappy from '../../assets/baddie_happy.png';
+import baddieDisappointed from '../../assets/baddie_disappointed.png';
+import baddieToxic from '../../assets/baddie_toxic.png';
+
+const IMAGE_MAP = {
+  neutral: baddieNeutral,
+  happy: baddieHappy,
+  disappointed: baddieDisappointed,
+  toxic: baddieToxic
+};
+
 export default function DuoPartner({ positions, gamificationState, cooldownTimeLeft, ugmStatus }) {
   const [dialogue, setDialogue] = useState('');
-  const [avatarExpr, setAvatarExpr] = useState('💅');
+  const [imageState, setImageState] = useState('neutral');
 
   useEffect(() => {
     // Determine the current state based on recent actions
     if (cooldownTimeLeft > 0) {
       setDialogue(getRandom(DUO_DIALOGUES.cooldown));
-      setAvatarExpr('🙅‍♀️');
+      setImageState('toxic');
       return;
     }
 
     if (ugmStatus?.isObservationMode) {
       setDialogue("Market's open, but your UGM classes are calling. Focus on your degree. I'll watch the charts.");
-      setAvatarExpr('📚');
+      setImageState('neutral');
       return;
     }
 
     if (gamificationState?.is_eco_round) {
       setDialogue(getRandom(DUO_DIALOGUES.eco_round));
-      setAvatarExpr('🛡️');
+      setImageState('neutral');
       return;
     }
 
     if (gamificationState?.ult_points === 6 && !gamificationState?.is_ult_active) {
       setDialogue(getRandom(DUO_DIALOGUES.ult_ready));
-      setAvatarExpr('🔥');
+      setImageState('happy');
       return;
     }
 
@@ -42,16 +54,16 @@ export default function DuoPartner({ positions, gamificationState, cooldownTimeL
         
         if (isWin && processScore >= 66) {
           setDialogue(getRandom(DUO_DIALOGUES.win_good_process));
-          setAvatarExpr('✨');
+          setImageState('happy');
         } else if (isWin && processScore < 66) {
           setDialogue(getRandom(DUO_DIALOGUES.win_bad_process));
-          setAvatarExpr('😒');
+          setImageState('disappointed');
         } else if (!isWin && processScore >= 66) {
           setDialogue(getRandom(DUO_DIALOGUES.loss_good_process));
-          setAvatarExpr('🤝');
+          setImageState('neutral');
         } else {
           setDialogue(getRandom(DUO_DIALOGUES.loss_bad_process));
-          setAvatarExpr('🤦‍♀️');
+          setImageState('toxic');
         }
         return;
       }
@@ -59,7 +71,7 @@ export default function DuoPartner({ positions, gamificationState, cooldownTimeL
 
     // Default idle
     setDialogue(getRandom(DUO_DIALOGUES.idle));
-    setAvatarExpr('💅');
+    setImageState('neutral');
 
   }, [positions, gamificationState, cooldownTimeLeft, ugmStatus]);
 
@@ -89,21 +101,25 @@ export default function DuoPartner({ positions, gamificationState, cooldownTimeL
       }} />
 
       <div style={{
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 64,
+        height: 64,
+        borderRadius: 32,
         background: 'var(--bg-primary)',
         border: '2px solid var(--accent)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: 24,
         flexShrink: 0,
         position: 'relative',
         zIndex: 1,
-        boxShadow: '0 4px 12px var(--accent-light)'
+        boxShadow: '0 4px 12px var(--accent-light)',
+        overflow: 'hidden'
       }}>
-        {avatarExpr}
+        <img 
+          src={IMAGE_MAP[imageState]} 
+          alt="Baddie Companion" 
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+        />
       </div>
 
       <div style={{ flex: 1, position: 'relative', zIndex: 1 }}>
