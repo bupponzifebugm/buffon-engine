@@ -15,6 +15,7 @@ import AuthGate from './components/Auth/AuthGate';
 import Header from './components/Layout/Header';
 import TabNav from './components/Layout/TabNav';
 import MorningGate from './components/MorningGate/MorningGate';
+import DuoPartner from './components/Dashboard/DuoPartner';
 import AlertCenter from './components/Dashboard/AlertCenter';
 import DrawdownMonitor from './components/Drawdown/DrawdownMonitor';
 import SizingCalculator from './components/Calculator/SizingCalculator';
@@ -34,8 +35,8 @@ import ConfidentLog from './components/Confident/ConfidentLog';
 import { TIERS } from './lib/constants';
 
 function App() {
-  const { user, profile, loading: authLoading, signIn, signUp, signOut, updateProfile } = useAuth();
-  const { positions, dailyPnl, weeklyPnl, monthlyPnl, addPosition, deletePosition, clearPositions } = usePositions(user);
+  const { user, profile, loading: authLoading, signIn, signUp, signOut, updateProfile, updateGamificationState } = useAuth();
+  const { positions, dailyPnl, weeklyPnl, monthlyPnl, addPosition, deletePosition, clearPositions } = usePositions(user, profile, updateGamificationState);
   const { challengeData, cleanStreak, currentTierKey, updateTrade, loading: challengeLoading } = useChallenge(user);
   const { todaysGate, isGateCompleted, submitGate, loading: gateLoading } = useMorningGate(user);
   const { notes, activeNote, createNote, openNote, updateNote, deleteNote, uploadImage } = useJournal(user);
@@ -238,6 +239,12 @@ function App() {
 
         {/* === EXECUTION ENGINE TAB === */}
         <div className={`tab-content${activeTab === 'tab-execute' ? ' active' : ''}`}>
+          <DuoPartner 
+            positions={positions} 
+            gamificationState={profile?.gamification_state} 
+            cooldownTimeLeft={cooldownTimeLeft} 
+            ugmStatus={ugmStatus} 
+          />
           <AlertCenter
             todaysGate={todaysGate}
             cleanStreak={cleanStreak}
@@ -289,6 +296,8 @@ function App() {
             positions={positions} 
             cleanStreak={cleanStreak}
             currentTierKey={currentTierKey}
+            gamificationState={profile?.gamification_state}
+            updateGamificationState={updateGamificationState}
           />
         </div>
 
@@ -355,6 +364,7 @@ function App() {
         onClose={handleCloseAddModal}
         onSave={handleSavePosition}
         prefill={addModalPrefill}
+        gamificationState={profile?.gamification_state}
       />
     </div>
   );

@@ -439,3 +439,52 @@ export const JOURNAL_TEMPLATES = [
 <p>(...)</p>`
   }
 ];
+
+// ─── SENIOR BADDIE DUO PARTNER DIALOGUES ───
+export const DUO_DIALOGUES = {
+  idle: [
+    "I'm watching your sizing. Don't make me tap the sign.",
+    "Bored? Go study for UGM. Don't force a trade just to feel something.",
+    "Patience pays. Literally. Wait for the A+ setup."
+  ],
+  win_good_process: [
+    "Flawless execution. Knew you had it in you.",
+    "That's how we print. Clean process, clean profit.",
+    "Textbook setup. Don't get arrogant though, reset for the next one."
+  ],
+  win_bad_process: [
+    "You got lucky. Lucky process is poison. Fix your entries.",
+    "We made money, but that was sloppy. Don't do that again.",
+    "I'll take the green, but your execution was a mess. Focus."
+  ],
+  loss_good_process: [
+    "Finally cut that loss? Good boy. That's how we protect capital.",
+    "Good process, bad variance. Shake it off, the system works.",
+    "Losses are just business expenses. You followed the rules, I'm proud."
+  ],
+  loss_bad_process: [
+    "What was that? We literally talked about this.",
+    "Revenge trading? Really? Step away from the keyboard.",
+    "That was entirely avoidable. Stop chasing. Reset your mind."
+  ],
+  eco_round: [
+    "Taking an Eco Round? Smart move. Just focus on form, I've got your back.",
+    "Half size, full focus. Let's build that confidence back up."
+  ],
+  ult_ready: [
+    "Ultimate is charged. Find a high conviction setup and let's pop it.",
+    "You've been playing clean. Time to cash in on that Ult."
+  ],
+  cooldown: [
+    "You're in timeout. Go drink some water. Do not touch the buy button."
+  ]
+};
+
+// ─── GAMIFICATION THRESHOLDS ───
+export const GAMIFICATION_CONFIG = {
+  SHIELD_MAX: 100,
+  SHIELD_INCREMENT: 20,
+  ULT_MAX: 6,
+  XP_PER_CHECK: 10, // XP gained per process checkbox
+  FIRST_WIN_BONUS: 10
+};

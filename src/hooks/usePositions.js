@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { getTodayString, getWeekStartString, getMonthStartString } from '../lib/utils';
+import { GAMIFICATION_CONFIG } from '../lib/constants';
 
-export function usePositions(user) {
+export function usePositions(user, profile, updateGamificationState) {
   const [positions, setPositions] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,6 +30,73 @@ export function usePositions(user) {
 
   async function addPosition(pos) {
     if (!user) return;
+
+    let finalRR = pos.rr_awarded || 0;
+    
+    if (profile && updateGamificationState && pos.status !== 'open') {
+      const gState = profile.gamification_state || {
+        heavy_shield: 0, ult_points: 0, is_eco_round: false, is_ult_active: false,
+        xp_patience: 0, xp_execution: 0, xp_risk: 0, custom_bounty: { current_rr: 0, target_rr: 500 }
+      };
+
+      let newShield = gState.heavy_shield;
+      let newUlt = gState.ult_points;
+      let newIsUltActive = gState.is_ult_active;
+      let newEco = gState.is_eco_round;
+      
+      const isWin = pos.pnl > 0;
+      const processScore = pos.process_score || 0;
+      const isPerfectProcess = processScore === 100;
+
+      // 1. First Win of the Day Bonus
+      const today = getTodayString();
+      const isFirstTradeToday = !positions.some(p => p.trade_date === today);
+      if (isFirstTradeToday && isPerfectProcess) {
+        finalRR += GAMIFICATION_CONFIG.FIRST_WIN_BONUS;
+      }
+
+      // 2. Ultimate Logic
+      if (gState.is_ult_active) {
+        if (isWin && processScore >= 66) {
+          finalRR *= 2; // Double RR!
+        }
+        newIsUltActive = false; // consume ult
+        newUlt = 0;
+      } else if (processScore >= 66) {
+        newUlt = Math.min(GAMIFICATION_CONFIG.ULT_MAX, newUlt + 1);
+      }
+
+      // 3. Heavy Shield Logic
+      if (finalRR < 0 && gState.heavy_shield >= GAMIFICATION_CONFIG.SHIELD_MAX) {
+        finalRR = 0; // Shield absorbed the RR loss
+        newShield = 0; // Shield breaks
+      } else if (isPerfectProcess) {
+        newShield = Math.min(GAMIFICATION_CONFIG.SHIELD_MAX, newShield + GAMIFICATION_CONFIG.SHIELD_INCREMENT);
+      }
+
+      // 4. Eco Round Logic
+      if (gState.is_eco_round && processScore >= 66) {
+        finalRR += 15; // Bonus for surviving Eco cleanly
+        newEco = false;
+      }
+
+      // 5. XP & Custom Bounty Gains
+      const xpGain = isPerfectProcess ? 30 : (processScore >= 66 ? 20 : (processScore >= 33 ? 10 : 0));
+      
+      await updateGamificationState({
+        heavy_shield: newShield,
+        ult_points: newUlt,
+        is_ult_active: newIsUltActive,
+        is_eco_round: newEco,
+        xp_execution: gState.xp_execution + xpGain,
+        xp_risk: gState.xp_risk + xpGain,
+        custom_bounty: {
+          ...gState.custom_bounty,
+          current_rr: Math.max(0, (gState.custom_bounty.current_rr || 0) + finalRR)
+        }
+      });
+    }
+
     const { data, error } = await supabase
       .from('positions')
       .insert({
@@ -47,7 +115,7 @@ export function usePositions(user) {
         is_violation: pos.is_violation || false,
         violation_reason: pos.violation_reason || '',
         process_score: pos.process_score || 0,
-        rr_awarded: pos.rr_awarded || 0,
+        rr_awarded: finalRR,
       })
       .select()
       .single();

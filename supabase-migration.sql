@@ -55,3 +55,22 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS observed_holidays JSONB DEFAULT '[
 -- 5. ADD GAMIFICATION COLUMNS TO POSITIONS (Process Score & Rank Rating)
 ALTER TABLE positions ADD COLUMN IF NOT EXISTS process_score INTEGER DEFAULT 0;
 ALTER TABLE positions ADD COLUMN IF NOT EXISTS rr_awarded INTEGER DEFAULT 0;
+
+-- 6. ADD GAMIFICATION STATE TO PROFILES
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS gamification_state JSONB DEFAULT '{
+  "heavy_shield": 0,
+  "ult_points": 0,
+  "is_eco_round": false,
+  "is_ult_active": false,
+  "xp_patience": 0,
+  "xp_execution": 0,
+  "xp_risk": 0,
+  "unlocked_loots": ["theme_default"],
+  "active_loot": "theme_default",
+  "custom_bounty": {
+    "name": "Reward Name",
+    "target_rr": 500,
+    "current_rr": 0
+  }
+}'::jsonb;
+

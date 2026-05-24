@@ -59,6 +59,24 @@ export function useAuth() {
     if (data) setProfile(data);
   }
 
+  async function updateGamificationState(updates) {
+    if (!profile) return;
+    const currentState = profile.gamification_state || {
+      heavy_shield: 0,
+      ult_points: 0,
+      is_eco_round: false,
+      is_ult_active: false,
+      xp_patience: 0,
+      xp_execution: 0,
+      xp_risk: 0,
+      unlocked_loots: ['theme_default'],
+      active_loot: 'theme_default',
+      custom_bounty: { name: 'Reward Name', target_rr: 500, current_rr: 0 }
+    };
+    const newState = { ...currentState, ...updates };
+    await updateProfile({ gamification_state: newState });
+  }
+
   async function signIn(email, password) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error };
@@ -73,5 +91,5 @@ export function useAuth() {
     await supabase.auth.signOut();
   }
 
-  return { user, profile, loading, signIn, signUp, signOut, updateProfile };
+  return { user, profile, loading, signIn, signUp, signOut, updateProfile, updateGamificationState };
 }

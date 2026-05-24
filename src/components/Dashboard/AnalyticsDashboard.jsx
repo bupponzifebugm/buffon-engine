@@ -16,7 +16,7 @@ function formatCompactRp(val) {
   return `${sign}Rp ${val}`;
 }
 
-export default function AnalyticsDashboard({ positions, cleanStreak = 0, currentTierKey = 'survival_10m' }) {
+export default function AnalyticsDashboard({ positions, cleanStreak = 0, currentTierKey = 'survival_10m', gamificationState, updateGamificationState }) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const monthYearLabel = useMemo(() => {
@@ -314,9 +314,32 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
     return ACHIEVEMENTS.filter(a => a.check(positions));
   }, [positions]);
 
+  // ── K/D/A & GAME STATS ──
+  const gameStats = useMemo(() => {
+    let kills = 0, deaths = 0, assists = 0;
+    positions.forEach(p => {
+      if (p.status === 'open') return;
+      const riskRp = (p.entry_price && p.sl_price && p.lots && p.entry_price > p.sl_price)
+        ? (p.entry_price - p.sl_price) * p.lots * 100 : 0;
+      
+      if (riskRp > 0) {
+        const r = p.pnl / riskRp;
+        if (r >= 0.5) kills++; // Solid win
+        else if (r <= -0.5) deaths++; // Solid loss
+        else assists++; // Scratch/Breakeven
+      }
+    });
+    return { kills, deaths, assists };
+  }, [positions]);
+
   // ── REPORT CARD ──
   const [showReportCard, setShowReportCard] = useState(false);
   const reportRef = useRef(null);
+
+  const gState = gamificationState || {
+    heavy_shield: 0, ult_points: 0, is_eco_round: false, is_ult_active: false,
+    xp_patience: 0, xp_execution: 0, xp_risk: 0, custom_bounty: { current_rr: 0, target_rr: 500, name: 'Self Reward' }
+  };
 
   return (
     <div>
@@ -427,6 +450,135 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
           </div>
         </div>
       </div>
+
+      {/* ── RPG COMMAND CENTER ── */}
+      <div className="grid-3" style={{ marginBottom: 20 }}>
+        {/* K/D/A & Skills */}
+        <div className="card">
+          <div className="card-title">
+            <Target size={16} style={{ color: 'var(--accent)' }} />
+            Combat Stats & Skills
+          </div>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+            <div style={{ flex: 1, background: 'var(--bg-tertiary)', padding: 8, borderRadius: 8, textAlign: 'center' }}>
+              <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>K/D/A</div>
+              <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                <span style={{ color: 'var(--success)' }}>{gameStats.kills}</span>/
+                <span style={{ color: 'var(--danger)' }}>{gameStats.deaths}</span>/
+                <span style={{ color: 'var(--text-secondary)' }}>{gameStats.assists}</span>
+              </div>
+            </div>
+            <div style={{ flex: 1, background: 'var(--bg-tertiary)', padding: 8, borderRadius: 8, textAlign: 'center' }}>
+              <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>K/D Ratio</div>
+              <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                {gameStats.deaths > 0 ? (gameStats.kills / gameStats.deaths).toFixed(2) : gameStats.kills}
+              </div>
+            </div>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              { label: 'Execution', xp: gState.xp_execution },
+              { label: 'Risk Mgmt', xp: gState.xp_risk },
+              { label: 'Patience', xp: gState.xp_patience }
+            ].map(skill => (
+              <div key={skill.label}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>{skill.label} Lvl {Math.floor(skill.xp / 100) + 1}</span>
+                  <span style={{ color: 'var(--accent)' }}>{skill.xp % 100}/100 XP</span>
+                </div>
+                <div style={{ height: 4, background: 'var(--bg-tertiary)', borderRadius: 2 }}>
+                  <div style={{ width: `${skill.xp % 100}%`, height: '100%', background: 'var(--accent)', borderRadius: 2 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Buffs & Ultimates */}
+        <div className="card">
+          <div className="card-title">
+            <Shield size={16} style={{ color: 'var(--accent)' }} />
+            Active Buffs <span title="Heavy Shield absorbs 100% of RR loss on a bad trade if fully charged. Ultimate doubles the RR gain on your next good trade." style={{ fontSize: 10, color: 'var(--text-secondary)', cursor: 'help', marginLeft: 6 }}>(?)</span>
+          </div>
+          
+          {/* Heavy Shield */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+              <span style={{ fontWeight: 600, color: gState.heavy_shield === 100 ? 'var(--success)' : 'var(--text-primary)' }}>Heavy Shield</span>
+              <span style={{ color: 'var(--text-secondary)' }}>{gState.heavy_shield}%</span>
+            </div>
+            <div style={{ height: 8, background: 'var(--bg-tertiary)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--border)' }}>
+              <div style={{ width: `${gState.heavy_shield}%`, height: '100%', background: gState.heavy_shield === 100 ? 'var(--success)' : 'var(--text-secondary)', transition: 'width 0.3s' }} />
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 4 }}>Absorbs 1 RR Loss. Charges via 100% process trades.</div>
+          </div>
+
+          {/* Ultimate */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+              <span style={{ fontWeight: 600, color: gState.ult_points === 6 ? 'var(--danger)' : 'var(--text-primary)' }}>Ultimate: Double RR</span>
+              <span style={{ color: 'var(--text-secondary)' }}>{gState.ult_points}/6</span>
+            </div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {[1,2,3,4,5,6].map(pt => (
+                <div key={pt} style={{ flex: 1, height: 8, borderRadius: 2, background: pt <= gState.ult_points ? (gState.ult_points === 6 ? 'var(--danger)' : 'var(--accent)') : 'var(--bg-tertiary)' }} />
+              ))}
+            </div>
+            {gState.ult_points === 6 && !gState.is_ult_active && (
+              <button 
+                onClick={() => updateGamificationState?.({ is_ult_active: true })}
+                style={{ width: '100%', marginTop: 8, background: 'var(--danger-bg)', color: 'var(--danger)', border: '1px solid var(--danger)', padding: '6px', borderRadius: 4, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+              >
+                ACTIVATE ULTIMATE
+              </button>
+            )}
+            {gState.is_ult_active && (
+              <div style={{ marginTop: 8, color: 'var(--danger)', fontSize: 11, fontWeight: 700, textAlign: 'center', animation: 'pulse 1.5s infinite' }}>
+                ULTIMATE ACTIVE ON NEXT TRADE
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Eco & Bounty */}
+        <div className="card">
+          <div className="card-title">
+            <Star size={16} style={{ color: 'var(--accent)' }} />
+            Missions & Bounties
+          </div>
+          
+          <div style={{ background: gState.is_eco_round ? 'var(--success-bg)' : 'var(--bg-tertiary)', padding: 12, borderRadius: 8, marginBottom: 16, border: gState.is_eco_round ? '1px solid var(--success)' : '1px solid transparent' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: gState.is_eco_round ? 'var(--success)' : 'var(--text-primary)' }}>Eco Round</div>
+                <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 2 }}>Half size, +15 RR bonus if clean.</div>
+              </div>
+              {!gState.is_eco_round ? (
+                <button 
+                  onClick={() => updateGamificationState?.({ is_eco_round: true })}
+                  style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '4px 8px', borderRadius: 4, fontSize: 10, cursor: 'pointer' }}
+                >
+                  Start Eco
+                </button>
+              ) : (
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--success)' }}>ACTIVE</span>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+              <span style={{ fontWeight: 600 }}>Bounty: {gState.custom_bounty?.name || 'Self Reward'}</span>
+              <span style={{ color: 'var(--accent)' }}>{gState.custom_bounty?.current_rr || 0} / {gState.custom_bounty?.target_rr || 500} RR</span>
+            </div>
+            <div style={{ height: 6, background: 'var(--bg-tertiary)', borderRadius: 3, overflow: 'hidden' }}>
+              <div style={{ width: `${Math.min(100, ((gState.custom_bounty?.current_rr || 0) / (gState.custom_bounty?.target_rr || 500)) * 100)}%`, height: '100%', background: 'var(--accent)' }} />
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* ── TOP SECTION: SVG EQUITY CURVE & UPGRADE RUNWAY ── */}
       <div className="grid-2" style={{ marginBottom: 20 }}>
         {/* Equity Curve Card */}

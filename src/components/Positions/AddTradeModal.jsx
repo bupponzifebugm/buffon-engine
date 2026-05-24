@@ -1,24 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getTodayString } from '../../lib/utils';
 import { EMOTIONS, calcRR } from '../../lib/constants';
 
-export default function AddTradeModal({ isOpen, onClose, onSave, prefill }) {
+export default function AddTradeModal({ isOpen, onClose, onSave, prefill, gamificationState }) {
   const [ticker, setTicker] = useState(prefill?.ticker || '');
   const [lots, setLots] = useState(prefill?.lots || '');
   const [entryPrice, setEntryPrice] = useState(prefill?.entry_price || '');
   const [slPrice, setSlPrice] = useState(prefill?.sl_price || '');
   const [tp1Price, setTp1Price] = useState(prefill?.tp1_price || '');
   const [tp2Price, setTp2Price] = useState(prefill?.tp2_price || '');
-  const [status, setStatus] = useState('open');
+  const [status, setStatus] = useState('closed');
   const [exitPrice, setExitPrice] = useState('');
   const [emotion, setEmotion] = useState('calm');
   const [isViolation, setIsViolation] = useState(false);
   const [violationReason, setViolationReason] = useState('');
 
   // Process Score checkboxes
-  const [procSetup, setProcSetup] = useState(false);
-  const [procExecution, setProcExecution] = useState(false);
-  const [procRisk, setProcRisk] = useState(false);
+  const [procSetup, setProcSetup] = useState(true);
+  const [procExecution, setProcExecution] = useState(true);
+  const [procRisk, setProcRisk] = useState(true);
 
   const processScore = Math.round(([procSetup, procExecution, procRisk].filter(Boolean).length / 3) * 100);
 
@@ -31,14 +31,14 @@ export default function AddTradeModal({ isOpen, onClose, onSave, prefill }) {
       setSlPrice(prefill.sl_price || '');
       setTp1Price(prefill.tp1_price || '');
       setTp2Price(prefill.tp2_price || '');
-      setStatus('open');
+      setStatus('closed');
       setExitPrice('');
       setEmotion('calm');
       setIsViolation(false);
       setViolationReason('');
-      setProcSetup(false);
-      setProcExecution(false);
-      setProcRisk(false);
+      setProcSetup(true);
+      setProcExecution(true);
+      setProcRisk(true);
     } else {
       setTicker('');
       setLots('');
@@ -109,6 +109,22 @@ export default function AddTradeModal({ isOpen, onClose, onSave, prefill }) {
     <div className={`modal-overlay${isOpen ? ' open' : ''}`} onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
         <h3>Log Trade</h3>
+
+        {/* GAMIFICATION STATUS BANNER */}
+        {gamificationState && (gamificationState.is_ult_active || gamificationState.is_eco_round) && (
+          <div style={{ marginBottom: 16, padding: 12, borderRadius: 8, background: gamificationState.is_ult_active ? 'var(--danger-bg)' : 'var(--success-bg)', border: `1px solid ${gamificationState.is_ult_active ? 'var(--danger)' : 'var(--success)'}` }}>
+            {gamificationState.is_ult_active && (
+              <div style={{ color: 'var(--danger)', fontSize: 12, fontWeight: 700, animation: 'pulse 1.5s infinite' }}>
+                🔥 ULTIMATE ACTIVE: Next WIN gets 2x RR! (Don't waste it on a bad setup)
+              </div>
+            )}
+            {gamificationState.is_eco_round && (
+              <div style={{ color: 'var(--success)', fontSize: 12, fontWeight: 700, marginTop: gamificationState.is_ult_active ? 4 : 0 }}>
+                🛡️ ECO ROUND ACTIVE: Half your size. Clean execution gets +15 RR bonus.
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="field">
           <label>Ticker</label>
