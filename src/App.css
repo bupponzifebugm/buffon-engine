@@ -1847,3 +1847,31 @@ ul.system-list b {
 .pulse {
   animation: pulse 1.5s infinite ease-in-out;
 }
+
+/* ── UGM Class Input Styling (Force Visibility Override) ── */
+.ugm-class-input {
+  flex: 1;
+  color: var(--text-primary) !important;
+  background-color: var(--bg-tertiary) !important;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  outline: none;
+  transition: all 0.2s;
+  caret-color: var(--accent) !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+}
+
+.ugm-class-input:focus {
+  border-color: var(--accent);
+  background-color: var(--surface) !important;
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.ugm-class-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}

@@ -34,6 +34,7 @@ export function useAuth() {
       .eq('id', userId)
       .single();
 
+    let profileData = null;
     if (error && error.code === 'PGRST116') {
       // Profile doesn't exist yet, create it
       const { data: newProfile } = await supabase
@@ -41,22 +42,51 @@ export function useAuth() {
         .insert({ id: userId, display_name: 'Trader', active_capital: 10000000, current_tier: 'survival_10m' })
         .select()
         .single();
-      setProfile(newProfile);
+      profileData = newProfile;
     } else {
-      setProfile(data);
+      profileData = data;
+    }
+
+    if (profileData) {
+      // Fallback: if gamification_state is null or empty, load from localStorage
+      if (!profileData.gamification_state) {
+        const stored = localStorage.getItem(`buffon_gamification_state_${userId}`);
+        if (stored) {
+          try {
+            profileData.gamification_state = JSON.parse(stored);
+          } catch (e) {
+            console.error('Error parsing local gamification_state fallback:', e);
+          }
+        }
+      }
+      setProfile(profileData);
     }
     setLoading(false);
   }
 
   async function updateProfile(updates) {
     if (!user) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', user.id)
       .select()
       .single();
-    if (data) setProfile(data);
+
+    if (error) {
+      console.error('Supabase profile update failed. Applying local fallback:', error);
+      // Fallback: update profile state locally so UI is fully responsive
+      setProfile(prev => prev ? { ...prev, ...updates } : null);
+
+      if (updates.gamification_state) {
+        localStorage.setItem(
+          `buffon_gamification_state_${user.id}`,
+          JSON.stringify(updates.gamification_state)
+        );
+      }
+    } else if (data) {
+      setProfile(data);
+    }
   }
 
   async function updateGamificationState(updates) {

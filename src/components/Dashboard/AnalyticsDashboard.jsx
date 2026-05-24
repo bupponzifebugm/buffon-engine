@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { fmtRp, fmtPct, getWeekStartString } from '../../lib/utils';
 import { EMOTIONS, RANKS, getRankFromRR, getNextRank, ACHIEVEMENTS, RR_RULES } from '../../lib/constants';
 import { ChevronLeft, ChevronRight, TrendingUp, Award, Download, Trophy, Shield, Target, Star } from 'lucide-react';
@@ -336,9 +336,24 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
   const [showReportCard, setShowReportCard] = useState(false);
   const reportRef = useRef(null);
 
+  // Tooltip toggle states
+  const [showKdaInfo, setShowKdaInfo] = useState(false);
+  const [showBuffsInfo, setShowBuffsInfo] = useState(false);
+  const [showMissionsInfo, setShowMissionsInfo] = useState(false);
+
   // Bounty editor state
   const [bountyName, setBountyName] = useState(gamificationState?.custom_bounty?.name || 'Self Reward');
   const [bountyTarget, setBountyTarget] = useState(gamificationState?.custom_bounty?.target_rr?.toString() || '500');
+
+  // Sync bounty inputs when loaded from database
+  useEffect(() => {
+    if (gamificationState?.custom_bounty?.name) {
+      setBountyName(gamificationState.custom_bounty.name);
+    }
+    if (gamificationState?.custom_bounty?.target_rr) {
+      setBountyTarget(gamificationState.custom_bounty.target_rr.toString());
+    }
+  }, [gamificationState]);
 
   const gState = gamificationState || {
     heavy_shield: 0, ult_points: 0, is_eco_round: false, is_ult_active: false,
@@ -459,14 +474,41 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
       <div className="grid-3" style={{ marginBottom: 20 }}>
         {/* K/D/A & Skills */}
         <div className="card">
-          <div className="card-title">
-            <Target size={16} style={{ color: 'var(--accent)' }} />
-            Combat Stats & Skills
+          <div className="card-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Target size={16} style={{ color: 'var(--accent)' }} />
+              Combat Stats & Skills
+            </span>
+            <button 
+              onClick={() => setShowKdaInfo(!showKdaInfo)}
+              style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+                outline: 'none',
+                transition: 'all 0.2s'
+              }}
+              title="Toggle explanation"
+            >
+              ?
+            </button>
           </div>
-          <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginBottom: 12, lineHeight: 1.5, background: 'var(--bg-tertiary)', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)' }}>
-            <strong>K/D/A</strong> = Kills (wins ≥ 0.5R) / Deaths (losses ≤ -0.5R) / Assists (scratches). <br/>
-            <strong>Skill Trees</strong> level up automatically when you tick Process Checkboxes on every trade. 100% process = +30 XP, 66% = +20 XP, 33% = +10 XP. Every 100 XP = 1 Level Up.
-          </div>
+          {showKdaInfo && (
+            <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginBottom: 12, lineHeight: 1.5, background: 'var(--accent-light)', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(204, 120, 92, 0.25)', animation: 'fadeIn 0.2s ease-in-out' }}>
+              <strong>K/D/A</strong> = Kills (wins ≥ 0.5R) / Deaths (losses ≤ -0.5R) / Assists (scratches). <br/>
+              <strong>Skill Trees</strong> level up automatically when you tick Process Checkboxes on every trade. 100% process = +30 XP, 66% = +20 XP, 33% = +10 XP. Every 100 XP = 1 Level Up.
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
             <div style={{ flex: 1, background: 'var(--bg-tertiary)', padding: 8, borderRadius: 8, textAlign: 'center' }}>
               <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>K/D/A</div>
@@ -505,14 +547,41 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
 
         {/* Buffs & Ultimates */}
         <div className="card">
-          <div className="card-title">
-            <Shield size={16} style={{ color: 'var(--accent)' }} />
-            Active Buffs
+          <div className="card-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Shield size={16} style={{ color: 'var(--accent)' }} />
+              Active Buffs
+            </span>
+            <button 
+              onClick={() => setShowBuffsInfo(!showBuffsInfo)}
+              style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+                outline: 'none',
+                transition: 'all 0.2s'
+              }}
+              title="Toggle explanation"
+            >
+              ?
+            </button>
           </div>
-          <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginBottom: 12, lineHeight: 1.5, background: 'var(--bg-tertiary)', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)' }}>
-            <strong>Heavy Shield</strong> — Charged by logging trades with 100% process score (+20% each). When full (100%), it blocks the next RR loss entirely, then resets to 0%.<br/>
-            <strong>Ultimate</strong> — Earn 1 charge per good-process trade (≥ 66%). At 6/6, press "Activate" → your next win with good process gives <strong>2× RR</strong>.
-          </div>
+          {showBuffsInfo && (
+            <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginBottom: 12, lineHeight: 1.5, background: 'var(--accent-light)', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(204, 120, 92, 0.25)', animation: 'fadeIn 0.2s ease-in-out' }}>
+              <strong>Heavy Shield</strong> — Charged by logging trades with 100% process score (+20% each). When full (100%), it blocks the next RR loss entirely, then resets to 0%.<br/>
+              <strong>Ultimate</strong> — Earn 1 charge per good-process trade (≥ 66%). At 6/6, press "Activate" → your next win with good process gives <strong>2× RR</strong>.
+            </div>
+          )}
           
           {/* Heavy Shield */}
           <div style={{ marginBottom: 16 }}>
@@ -554,14 +623,41 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
 
         {/* Eco & Bounty */}
         <div className="card">
-          <div className="card-title">
-            <Star size={16} style={{ color: 'var(--accent)' }} />
-            Missions & Bounties
+          <div className="card-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Star size={16} style={{ color: 'var(--accent)' }} />
+              Missions & Bounties
+            </span>
+            <button 
+              onClick={() => setShowMissionsInfo(!showMissionsInfo)}
+              style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+                outline: 'none',
+                transition: 'all 0.2s'
+              }}
+              title="Toggle explanation"
+            >
+              ?
+            </button>
           </div>
-          <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginBottom: 12, lineHeight: 1.5, background: 'var(--bg-tertiary)', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)' }}>
-            <strong>Eco Round</strong> — Start this when you're on a losing streak. Trade at half size. If your next trade has ≥ 66% process, you earn a +15 RR recovery bonus.<br/>
-            <strong>Custom Bounty</strong> — Set a personal reward (sneakers, sushi, etc.) and a target RR. Every trade fills the bar. Hit 100% → go withdraw and buy it!
-          </div>
+          {showMissionsInfo && (
+            <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginBottom: 12, lineHeight: 1.5, background: 'var(--accent-light)', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(204, 120, 92, 0.25)', animation: 'fadeIn 0.2s ease-in-out' }}>
+              <strong>Eco Round</strong> — Start this when you're on a losing streak. Trade at half size. If your next trade has ≥ 66% process, you earn a +15 RR recovery bonus.<br/>
+              <strong>Custom Bounty</strong> — Set a personal reward (sneakers, sushi, etc.) and a target RR. Every trade fills the bar. Hit 100% → go withdraw and buy it!
+            </div>
+          )}
           
           {/* Eco Round */}
           <div style={{ background: gState.is_eco_round ? 'var(--success-bg)' : 'var(--bg-tertiary)', padding: 12, borderRadius: 8, marginBottom: 16, border: gState.is_eco_round ? '1px solid var(--success)' : '1px solid transparent' }}>
