@@ -280,6 +280,140 @@ export const MISTAKE_SOLUTIONS = {
   'Enter unplanned trades': 'The 30-second test before any unplanned entry: "Can I explain in one sentence why I pre-planned this entry?" If you can\'t - don\'t enter.',
 };
 
+// ─── VALORANT-STYLE RANK SYSTEM ───
+export const RANKS = [
+  { key: 'iron',      label: 'Iron',      minRR: 0,    maxRR: 99,   icon: '⬛', color: '#6B655A' },
+  { key: 'bronze',    label: 'Bronze',    minRR: 100,  maxRR: 199,  icon: '🟫', color: '#A0724E' },
+  { key: 'silver',    label: 'Silver',    minRR: 200,  maxRR: 349,  icon: '⬜', color: '#9C9689' },
+  { key: 'gold',      label: 'Gold',      minRR: 350,  maxRR: 499,  icon: '🟨', color: '#B07D35' },
+  { key: 'platinum',  label: 'Platinum',  minRR: 500,  maxRR: 699,  icon: '💠', color: '#5EA8A0' },
+  { key: 'diamond',   label: 'Diamond',   minRR: 700,  maxRR: 899,  icon: '💎', color: '#7A9FCC' },
+  { key: 'ascendant', label: 'Ascendant', minRR: 900,  maxRR: 1199, icon: '🔷', color: '#467A57' },
+  { key: 'immortal',  label: 'Immortal',  minRR: 1200, maxRR: 1599, icon: '🔴', color: '#D45D5D' },
+  { key: 'radiant',   label: 'Radiant',   minRR: 1600, maxRR: Infinity, icon: '👑', color: '#E0936F' },
+];
+
+export function getRankFromRR(rr) {
+  const safeRR = Math.max(0, rr);
+  for (let i = RANKS.length - 1; i >= 0; i--) {
+    if (safeRR >= RANKS[i].minRR) return RANKS[i];
+  }
+  return RANKS[0];
+}
+
+export function getNextRank(currentRank) {
+  const idx = RANKS.findIndex(r => r.key === currentRank.key);
+  return idx < RANKS.length - 1 ? RANKS[idx + 1] : null;
+}
+
+// RR Award Rules (Valorant-style: Process > Outcome)
+export const RR_RULES = {
+  GOOD_PROCESS_WIN:  { rr: 25,  label: 'Match MVP', desc: 'Good process + Win' },
+  GOOD_PROCESS_LOSS: { rr: -5,  label: 'Honorable Defeat', desc: 'Good process + Loss' },
+  BAD_PROCESS_WIN:   { rr: 5,   label: 'Lucky Round', desc: 'Bad process + Win' },
+  BAD_PROCESS_LOSS:  { rr: -30, label: 'Tilted', desc: 'Bad process + Loss' },
+};
+
+export function calcRR(processScore, pnl) {
+  const isGoodProcess = processScore >= 66; // 2/3 or 3/3 checks = good
+  const isWin = pnl > 0;
+  if (isGoodProcess && isWin) return RR_RULES.GOOD_PROCESS_WIN;
+  if (isGoodProcess && !isWin) return RR_RULES.GOOD_PROCESS_LOSS;
+  if (!isGoodProcess && isWin) return RR_RULES.BAD_PROCESS_WIN;
+  return RR_RULES.BAD_PROCESS_LOSS;
+}
+
+// ─── ACHIEVEMENT BADGES ───
+export const ACHIEVEMENTS = [
+  {
+    key: 'radiant_execution',
+    icon: '🎯',
+    label: 'Radiant Execution',
+    desc: '5 consecutive trades with 100% Process Score',
+    check: (positions) => {
+      const recent = positions.slice(0, 5);
+      return recent.length >= 5 && recent.every(p => p.process_score === 100);
+    },
+  },
+  {
+    key: 'thrifty',
+    icon: '🧊',
+    label: 'Thrifty',
+    desc: 'Win +2R on a Survival Mode day',
+    check: (positions) => {
+      return positions.some(p => {
+        const riskRp = (p.entry_price && p.sl_price && p.lots && p.entry_price > p.sl_price)
+          ? (p.entry_price - p.sl_price) * p.lots * 100 : 0;
+        return riskRp > 0 && p.pnl > 0 && (p.pnl / riskRp) >= 2;
+      });
+    },
+  },
+  {
+    key: 'flawless',
+    icon: '🛡️',
+    label: 'Flawless',
+    desc: 'Zero violations for 7+ consecutive trades',
+    check: (positions) => {
+      const recent = positions.slice(0, 7);
+      return recent.length >= 7 && recent.every(p => !p.is_violation);
+    },
+  },
+  {
+    key: 'iron_wall',
+    icon: '🏰',
+    label: 'The Iron Wall',
+    desc: 'Hit SL exactly on 3 trades (perfect risk control)',
+    check: (positions) => {
+      const slHits = positions.filter(p => p.status === 'sl' && p.process_score >= 66);
+      return slHits.length >= 3;
+    },
+  },
+  {
+    key: 'hawks_patience',
+    icon: '🦅',
+    label: "Hawk's Patience",
+    desc: 'Survive a full trading day with 0 trades logged',
+    check: () => false, // This is tracked via special flag, checked by date
+  },
+  {
+    key: 'sniper',
+    icon: '🎯',
+    label: 'The Sniper',
+    desc: 'Hit TP2 with 100% Process Score',
+    check: (positions) => {
+      return positions.some(p => p.status === 'closed' && p.pnl > 0 && p.process_score === 100);
+    },
+  },
+  {
+    key: 'comeback_king',
+    icon: '⚔️',
+    label: 'Comeback King',
+    desc: 'Recover from -3R drawdown to positive',
+    check: (positions) => {
+      let cumulativeR = 0;
+      let wasDown3 = false;
+      const sorted = [...positions].reverse();
+      for (const p of sorted) {
+        const riskRp = (p.entry_price && p.sl_price && p.lots && p.entry_price > p.sl_price)
+          ? (p.entry_price - p.sl_price) * p.lots * 100 : 0;
+        if (riskRp > 0 && p.pnl) {
+          cumulativeR += p.pnl / riskRp;
+          if (cumulativeR <= -3) wasDown3 = true;
+          if (wasDown3 && cumulativeR > 0) return true;
+        }
+      }
+      return false;
+    },
+  },
+  {
+    key: 'first_blood',
+    icon: '🩸',
+    label: 'First Blood',
+    desc: 'Log your very first trade',
+    check: (positions) => positions.length >= 1,
+  },
+];
+
 // ─── JOURNAL TEMPLATES ───
 export const JOURNAL_TEMPLATES = [
   {

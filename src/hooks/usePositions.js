@@ -46,6 +46,8 @@ export function usePositions(user) {
         emotion: pos.emotion || 'calm',
         is_violation: pos.is_violation || false,
         violation_reason: pos.violation_reason || '',
+        process_score: pos.process_score || 0,
+        rr_awarded: pos.rr_awarded || 0,
       })
       .select()
       .single();

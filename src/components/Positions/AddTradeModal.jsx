@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getTodayString } from '../../lib/utils';
-import { EMOTIONS } from '../../lib/constants';
+import { EMOTIONS, calcRR } from '../../lib/constants';
 
 export default function AddTradeModal({ isOpen, onClose, onSave, prefill }) {
   const [ticker, setTicker] = useState(prefill?.ticker || '');
@@ -14,6 +14,13 @@ export default function AddTradeModal({ isOpen, onClose, onSave, prefill }) {
   const [emotion, setEmotion] = useState('calm');
   const [isViolation, setIsViolation] = useState(false);
   const [violationReason, setViolationReason] = useState('');
+
+  // Process Score checkboxes
+  const [procSetup, setProcSetup] = useState(false);
+  const [procExecution, setProcExecution] = useState(false);
+  const [procRisk, setProcRisk] = useState(false);
+
+  const processScore = Math.round(([procSetup, procExecution, procRisk].filter(Boolean).length / 3) * 100);
 
   // Reset form when prefill changes
   useEffect(() => {
@@ -29,6 +36,9 @@ export default function AddTradeModal({ isOpen, onClose, onSave, prefill }) {
       setEmotion('calm');
       setIsViolation(false);
       setViolationReason('');
+      setProcSetup(false);
+      setProcExecution(false);
+      setProcRisk(false);
     } else {
       setTicker('');
       setLots('');
@@ -41,6 +51,9 @@ export default function AddTradeModal({ isOpen, onClose, onSave, prefill }) {
       setEmotion('calm');
       setIsViolation(false);
       setViolationReason('');
+      setProcSetup(false);
+      setProcExecution(false);
+      setProcRisk(false);
     }
   }, [prefill]);
 
@@ -66,6 +79,9 @@ export default function AddTradeModal({ isOpen, onClose, onSave, prefill }) {
     else if (status === 'sl') pnl = (s - e) * l * 100;
     else if (status === 'tp1') pnl = (t1 - e) * (l * 0.4) * 100;
 
+    const roundedPnl = Math.round(pnl);
+    const rrResult = (status !== 'open') ? calcRR(processScore, roundedPnl) : null;
+
     onSave({
       ticker: t,
       lots: l,
@@ -75,11 +91,13 @@ export default function AddTradeModal({ isOpen, onClose, onSave, prefill }) {
       tp2_price: t2,
       exit_price: ex,
       status,
-      pnl: Math.round(pnl),
+      pnl: roundedPnl,
       trade_date: getTodayString(),
       emotion,
       is_violation: isViolation,
       violation_reason: isViolation ? violationReason : '',
+      process_score: processScore,
+      rr_awarded: rrResult ? rrResult.rr : 0,
     });
 
     onClose();
@@ -160,6 +178,57 @@ export default function AddTradeModal({ isOpen, onClose, onSave, prefill }) {
               >
                 {em.label}
               </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Process Score ── */}
+        <div className="field">
+          <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, display: 'block' }}>
+            Process Score
+            <span style={{ 
+              marginLeft: 8, 
+              fontSize: 12, 
+              fontWeight: 800, 
+              fontFamily: 'var(--font-mono)',
+              color: processScore >= 66 ? 'var(--success)' : processScore >= 33 ? 'var(--warning)' : 'var(--danger)',
+              background: processScore >= 66 ? 'var(--success-bg)' : processScore >= 33 ? 'var(--warning-bg)' : 'var(--danger-bg)',
+              padding: '2px 8px',
+              borderRadius: 4
+            }}>
+              {processScore}%
+            </span>
+          </label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              { state: procSetup, setter: setProcSetup, label: '🎯 Setup Match — Was this a pre-planned playbook setup?' },
+              { state: procExecution, setter: setProcExecution, label: '⚡ Execution — Did I enter/exit without hesitation and respect my exact SL?' },
+              { state: procRisk, setter: setProcRisk, label: '🛡️ Risk Control — Was sizing 100% compliant with IDR tier limits?' },
+            ].map((item, i) => (
+              <label 
+                key={i}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 10, 
+                  cursor: 'pointer',
+                  padding: '8px 12px',
+                  borderRadius: 6,
+                  border: `1px solid ${item.state ? 'var(--success)' : 'var(--border)'}`,
+                  background: item.state ? 'var(--success-bg)' : 'var(--bg-primary)',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={item.state}
+                  onChange={e => item.setter(e.target.checked)}
+                  style={{ width: 16, height: 16, accentColor: 'var(--success)' }}
+                />
+                <span style={{ fontSize: 12, color: item.state ? 'var(--success)' : 'var(--text-secondary)', fontWeight: item.state ? 600 : 400 }}>
+                  {item.label}
+                </span>
+              </label>
             ))}
           </div>
         </div>

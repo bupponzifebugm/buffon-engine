@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
-import { fmtRp, fmtPct } from '../../lib/utils';
-import { EMOTIONS } from '../../lib/constants';
-import { ChevronLeft, ChevronRight, TrendingUp, Award } from 'lucide-react';
+import { useState, useMemo, useRef } from 'react';
+import { fmtRp, fmtPct, getWeekStartString } from '../../lib/utils';
+import { EMOTIONS, RANKS, getRankFromRR, getNextRank, ACHIEVEMENTS, RR_RULES } from '../../lib/constants';
+import { ChevronLeft, ChevronRight, TrendingUp, Award, Download, Trophy, Shield, Target, Star } from 'lucide-react';
 
 function formatCompactRp(val) {
   if (val === 0) return 'Rp 0';
@@ -258,8 +258,175 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
 
   const finalCumulativePnl = chartDetails.netProfit;
 
+  // ── RANK RATING SYSTEM ──
+  const rankData = useMemo(() => {
+    let totalRR = 0;
+    let weekRR = 0;
+    const weekStart = getWeekStartString();
+    let totalProcessScore = 0;
+    let scoredTradeCount = 0;
+    let recentResults = [];
+
+    positions.forEach(p => {
+      const rr = p.rr_awarded || 0;
+      totalRR += rr;
+      if (p.trade_date >= weekStart) weekRR += rr;
+      if (p.process_score !== null && p.process_score !== undefined && p.status !== 'open') {
+        totalProcessScore += (p.process_score || 0);
+        scoredTradeCount++;
+      }
+      // Track last 5 results for match history
+      if (p.status !== 'open' && recentResults.length < 8) {
+        const isWin = p.pnl > 0;
+        const isGoodProcess = (p.process_score || 0) >= 66;
+        recentResults.push({ isWin, isGoodProcess, rr });
+      }
+    });
+
+    const safeRR = Math.max(0, totalRR);
+    const currentRank = getRankFromRR(safeRR);
+    const nextRank = getNextRank(currentRank);
+    const avgProcessScore = scoredTradeCount > 0 ? Math.round(totalProcessScore / scoredTradeCount) : 0;
+
+    // Progress within current rank
+    const rrInRank = safeRR - currentRank.minRR;
+    const rankRange = nextRank ? (nextRank.minRR - currentRank.minRR) : 100;
+    const progressPct = nextRank ? Math.min(100, (rrInRank / rankRange) * 100) : 100;
+
+    // MVP Trade (best R-multiple with 100% process this week)
+    const weekTrades = positions.filter(p => p.trade_date >= weekStart && p.pnl > 0);
+    let mvpTrade = null;
+    let mvpR = 0;
+    weekTrades.forEach(p => {
+      const riskRp = (p.entry_price && p.sl_price && p.lots && p.entry_price > p.sl_price)
+        ? (p.entry_price - p.sl_price) * p.lots * 100 : 0;
+      if (riskRp > 0) {
+        const r = p.pnl / riskRp;
+        if (r > mvpR) { mvpR = r; mvpTrade = p; }
+      }
+    });
+
+    return { totalRR: safeRR, weekRR, currentRank, nextRank, avgProcessScore, progressPct, recentResults, mvpTrade, mvpR };
+  }, [positions]);
+
+  // ── ACHIEVEMENT DETECTION ──
+  const unlockedAchievements = useMemo(() => {
+    return ACHIEVEMENTS.filter(a => a.check(positions));
+  }, [positions]);
+
+  // ── REPORT CARD ──
+  const [showReportCard, setShowReportCard] = useState(false);
+  const reportRef = useRef(null);
+
   return (
     <div>
+      {/* ── RANKED BANNER (Valorant-Style) ── */}
+      <div className="card" style={{ 
+        marginBottom: 20, 
+        border: `1px solid ${rankData.currentRank.color}`,
+        boxShadow: `0 0 20px ${rankData.currentRank.color}22`,
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Subtle rank glow background */}
+        <div style={{
+          position: 'absolute',
+          top: 0, right: 0,
+          width: 200, height: 200,
+          background: `radial-gradient(circle at top right, ${rankData.currentRank.color}15, transparent 70%)`,
+          pointerEvents: 'none'
+        }} />
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, position: 'relative', zIndex: 1 }}>
+          {/* Left: Rank Display */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{
+              fontSize: 42,
+              lineHeight: 1,
+              filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.15))'
+            }}>
+              {rankData.currentRank.icon}
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: 2 }}>
+                Current Rank
+              </div>
+              <div style={{ 
+                fontSize: 22, 
+                fontWeight: 800, 
+                fontFamily: 'var(--font-serif)',
+                color: rankData.currentRank.color,
+                letterSpacing: '-0.01em'
+              }}>
+                {rankData.currentRank.label}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', fontWeight: 600, marginTop: 2 }}>
+                {rankData.totalRR} RR
+              </div>
+            </div>
+          </div>
+
+          {/* Center: RR Progress Bar */}
+          <div style={{ flex: '1 1 200px', maxWidth: 340, minWidth: 200 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: rankData.currentRank.color }}>
+                {rankData.currentRank.label}
+              </span>
+              {rankData.nextRank && (
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>
+                  {rankData.nextRank.label} ({rankData.nextRank.minRR} RR)
+                </span>
+              )}
+            </div>
+            <div style={{ 
+              height: 8, 
+              background: 'var(--bg-tertiary)', 
+              borderRadius: 4, 
+              overflow: 'hidden',
+              border: '1px solid var(--border)'
+            }}>
+              <div style={{
+                height: '100%',
+                width: `${rankData.progressPct}%`,
+                background: `linear-gradient(90deg, ${rankData.currentRank.color}, ${rankData.currentRank.color}CC)`,
+                borderRadius: 4,
+                transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: `0 0 8px ${rankData.currentRank.color}44`
+              }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+              <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>This Week: <strong style={{ color: rankData.weekRR >= 0 ? 'var(--success)' : 'var(--danger)' }}>{rankData.weekRR >= 0 ? '+' : ''}{rankData.weekRR} RR</strong></span>
+              <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>APS: <strong style={{ color: rankData.avgProcessScore >= 66 ? 'var(--success)' : 'var(--danger)' }}>{rankData.avgProcessScore}%</strong></span>
+            </div>
+          </div>
+
+          {/* Right: Match History */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>Match History</div>
+            <div style={{ display: 'flex', gap: 3 }}>
+              {rankData.recentResults.length === 0 && <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>No matches yet</span>}
+              {rankData.recentResults.map((r, i) => (
+                <div key={i} style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: 4,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 9,
+                  fontWeight: 800,
+                  fontFamily: 'var(--font-mono)',
+                  background: r.isWin ? 'var(--success-bg)' : 'var(--danger-bg)',
+                  color: r.isWin ? 'var(--success)' : 'var(--danger)',
+                  border: `1px solid ${r.isWin ? 'var(--success)' : 'var(--danger)'}`,
+                }}>
+                  {r.rr > 0 ? `+${r.rr}` : r.rr}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
       {/* ── TOP SECTION: SVG EQUITY CURVE & UPGRADE RUNWAY ── */}
       <div className="grid-2" style={{ marginBottom: 20 }}>
         {/* Equity Curve Card */}
@@ -392,6 +559,64 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* ── TROPHY CASE ── */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="card-title">
+          <Trophy size={16} style={{ color: 'var(--accent)' }} />
+          Trophy Case
+        </div>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
+          Unlock achievements through disciplined execution. Each badge is earned, never given.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
+          {ACHIEVEMENTS.map(a => {
+            const isUnlocked = unlockedAchievements.some(u => u.key === a.key);
+            return (
+              <div
+                key={a.key}
+                style={{
+                  padding: '14px 12px',
+                  borderRadius: 8,
+                  border: `1px solid ${isUnlocked ? 'var(--accent)' : 'var(--border)'}`,
+                  background: isUnlocked ? 'var(--accent-light)' : 'var(--bg-primary)',
+                  opacity: isUnlocked ? 1 : 0.45,
+                  textAlign: 'center',
+                  transition: 'all 0.2s ease',
+                  position: 'relative'
+                }}
+              >
+                <div style={{ fontSize: 28, marginBottom: 6, filter: isUnlocked ? 'none' : 'grayscale(1)' }}>
+                  {a.icon}
+                </div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: isUnlocked ? 'var(--accent)' : 'var(--text-secondary)', marginBottom: 2 }}>
+                  {a.label}
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--text-secondary)', lineHeight: 1.3 }}>
+                  {a.desc}
+                </div>
+                {isUnlocked && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 6,
+                    right: 6,
+                    fontSize: 8,
+                    fontWeight: 800,
+                    background: 'var(--success)',
+                    color: '#fff',
+                    padding: '1px 5px',
+                    borderRadius: 3,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    Unlocked
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -594,6 +819,112 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
           </div>
         </div>
       </div>
+
+      {/* ── REPORT CARD SECTION ── */}
+      <div style={{ marginTop: 20, textAlign: 'center' }}>
+        <button
+          className="btn"
+          onClick={() => setShowReportCard(!showReportCard)}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+        >
+          <Download size={14} />
+          {showReportCard ? 'Hide Report Card' : 'Generate Weekly Report Card'}
+        </button>
+      </div>
+
+      {showReportCard && (
+        <div ref={reportRef} style={{ marginTop: 20 }}>
+          <div className="card" style={{
+            border: '2px solid var(--accent)',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+            padding: 32,
+            maxWidth: 640,
+            margin: '0 auto'
+          }}>
+            {/* Report Header */}
+            <div style={{ textAlign: 'center', marginBottom: 24, borderBottom: '1px solid var(--border)', paddingBottom: 20 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-secondary)', marginBottom: 4 }}>
+                Buffon Execution Engine
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 800, fontFamily: 'var(--font-serif)', color: 'var(--text-primary)' }}>
+                Weekly Report Card
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>
+                {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              </div>
+            </div>
+
+            {/* Rank + Stats Row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 24 }}>
+              <div style={{ textAlign: 'center', padding: '16px 0', background: 'var(--bg-primary)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: 32 }}>{rankData.currentRank.icon}</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: rankData.currentRank.color, fontFamily: 'var(--font-serif)' }}>
+                  {rankData.currentRank.label}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{rankData.totalRR} RR</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '16px 0', background: 'var(--bg-primary)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Process Score</div>
+                <div style={{ fontSize: 28, fontWeight: 800, fontFamily: 'var(--font-mono)', color: rankData.avgProcessScore >= 66 ? 'var(--success)' : 'var(--danger)' }}>
+                  {rankData.avgProcessScore}%
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>Average (APS)</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '16px 0', background: 'var(--bg-primary)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Skill Rating</div>
+                <div style={{ fontSize: 28, fontWeight: 800, fontFamily: 'var(--font-mono)', color: rStats.totalR >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                  {rStats.totalR > 0 ? '+' : ''}{rStats.totalR.toFixed(1)}R
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>Total R-Multiple</div>
+              </div>
+            </div>
+
+            {/* Key Stats */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em', marginBottom: 12 }}>
+                Performance Breakdown
+              </div>
+              {[
+                { label: 'RR This Week', value: `${rankData.weekRR >= 0 ? '+' : ''}${rankData.weekRR} RR`, color: rankData.weekRR >= 0 ? 'var(--success)' : 'var(--danger)' },
+                { label: 'Avg Win', value: `+${rStats.avgRWin.toFixed(2)}R`, color: 'var(--success)' },
+                { label: 'Avg Loss', value: `${rStats.avgRLoss.toFixed(2)}R`, color: 'var(--danger)' },
+                { label: 'System Expectancy', value: `${rStats.expectancy > 0 ? '+' : ''}${rStats.expectancy.toFixed(2)}R/trade`, color: rStats.expectancy >= 0 ? 'var(--success)' : 'var(--danger)' },
+                { label: 'Rule Violations', value: `${violationStats.count} (${fmtRp(violationStats.loss)})`, color: violationStats.count > 0 ? 'var(--danger)' : 'var(--success)' },
+              ].map((row, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
+                  <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{row.label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono)', color: row.color }}>{row.value}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Trophies Earned */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em', marginBottom: 8 }}>
+                Trophies Earned ({unlockedAchievements.length} / {ACHIEVEMENTS.length})
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {unlockedAchievements.length === 0 && <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>No trophies yet. Keep trading.</span>}
+                {unlockedAchievements.map(a => (
+                  <span key={a.key} style={{ fontSize: 11, padding: '4px 10px', background: 'var(--accent-light)', border: '1px solid var(--accent)', borderRadius: 4, color: 'var(--accent)', fontWeight: 700 }}>
+                    {a.icon} {a.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{ textAlign: 'center', borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                "Process beats outcomes. Good discipline + loss = this is fine, variance."
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 4, fontFamily: 'var(--font-mono)' }}>
+                buffon-engine v4.0 — {new Date().toLocaleDateString('en-CA')}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

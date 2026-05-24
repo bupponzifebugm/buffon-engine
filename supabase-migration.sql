@@ -51,3 +51,7 @@ CREATE POLICY "Users can manage own confident receipts"
 -- 4. ADD ACADEMIC AND HOLIDAY SCHEDULES TO PROFILES
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS class_schedule JSONB DEFAULT '[]'::jsonb;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS observed_holidays JSONB DEFAULT '[]'::jsonb;
+
+-- 5. ADD GAMIFICATION COLUMNS TO POSITIONS (Process Score & Rank Rating)
+ALTER TABLE positions ADD COLUMN IF NOT EXISTS process_score INTEGER DEFAULT 0;
+ALTER TABLE positions ADD COLUMN IF NOT EXISTS rr_awarded INTEGER DEFAULT 0;
