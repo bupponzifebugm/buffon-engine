@@ -114,10 +114,6 @@ function App() {
       return { isObservationMode: true, currentClass: activeClass.name };
     }
 
-    if (day === 1) {
-      return { isObservationMode: true, currentClass: 'Monday observation only' };
-    }
-
     if (day === 0 || day === 6) {
       return { isObservationMode: true, currentClass: 'Weekend Market Closed' };
     }
