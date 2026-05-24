@@ -11,17 +11,12 @@ export default function TradingCoach({
   tierConfig, 
   dailyPnl, 
   weeklyPnl,
-  ugmStatus
-}) {
+  ugmStatus}) {
   const [isOpen, setIsOpen] = useState(false);
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('buffon_gemini_api_key') || '');
   const [isConfiguring, setIsConfiguring] = useState(!localStorage.getItem('buffon_gemini_api_key'));
   const [tempKey, setTempKey] = useState('');
   
-  // Resizer state
-  const [drawerWidth, setDrawerWidth] = useState(() => parseInt(localStorage.getItem('buffon_coach_width')) || 450);
-  const isResizing = useRef(false);
-
   // Chat History DB State
   const generateId = () => Math.random().toString(36).substr(2, 9);
   const [conversations, setConversations] = useState(() => {
@@ -32,6 +27,40 @@ export default function TradingCoach({
   });
   const [activeChatId, setActiveChatId] = useState(generateId());
   const [showHistory, setShowHistory] = useState(false);
+
+  // Resizer state
+  const [drawerWidth, setDrawerWidth] = useState(() => parseInt(localStorage.getItem('buffon_coach_width')) || 450);
+  const isResizing = useRef(false);
+  const widthRef = useRef(drawerWidth);
+
+  useEffect(() => {
+    widthRef.current = drawerWidth;
+  }, [drawerWidth]);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isResizing.current) return;
+      const newWidth = window.innerWidth - e.clientX;
+      if (newWidth > 320 && newWidth < window.innerWidth * 0.9) {
+        setDrawerWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (isResizing.current) {
+        isResizing.current = false;
+        localStorage.setItem('buffon_coach_width', widthRef.current);
+      }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
 
   const defaultMessages = [
     { role: 'model', content: "I'm Buffon AI. I know your rules, your sizing, and your UGM schedule. Are you here to follow the system or donate money to the market today?" }
@@ -166,7 +195,13 @@ CRITICAL INSTRUCTION: Always append a JSON block at the very end of your respons
       contents: apiMessages,
       generationConfig: {
         temperature: 0.7
-      }
+      },
+      safetySettings: [
+        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+      ]
     };
 
     try {
@@ -262,9 +297,9 @@ CRITICAL INSTRUCTION: Always append a JSON block at the very end of your respons
 
       <div 
         className={`ai-coach-drawer ${isOpen ? 'open' : ''}`}
-        style={{ '--drawer-width': `${drawerWidth}px` }}
+        style={{ width: `${drawerWidth}px` }}
       >
-        <div className="ai-drawer-resizer" onMouseDown={handleMouseDown} />
+        <div className="ai-drawer-resizer" onMouseDown={() => isResizing.current = true} />
         
         <div className="ai-coach-header">
           <div className="ai-coach-title">

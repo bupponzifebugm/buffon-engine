@@ -382,11 +382,15 @@
   display: flex;
   flex-direction: column;
   transform: translateX(-100%);
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .ai-coach-history-panel.open {
   transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .ai-history-list {
