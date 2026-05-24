@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, X, Settings, Send, Brain, Key, AlertTriangle } from 'lucide-react';
+import { MessageSquare, X, Settings, Send, Brain, Key, Clock, Plus } from 'lucide-react';
 import { COACH_SYSTEM_PROMPT } from '../../lib/coachPrompt';
 import './TradingCoach.css';
 
@@ -18,19 +18,68 @@ export default function TradingCoach({
   const [isConfiguring, setIsConfiguring] = useState(!localStorage.getItem('buffon_gemini_api_key'));
   const [tempKey, setTempKey] = useState('');
   
-  const [messages, setMessages] = useState([
+  // Resizer state
+  const [drawerWidth, setDrawerWidth] = useState(() => parseInt(localStorage.getItem('buffon_coach_width')) || 450);
+  const isResizing = useRef(false);
+
+  // Chat History DB State
+  const generateId = () => Math.random().toString(36).substr(2, 9);
+  const [conversations, setConversations] = useState(() => {
+    try {
+      const saved = localStorage.getItem('buffon_ai_chats');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) { return []; }
+  });
+  const [activeChatId, setActiveChatId] = useState(generateId());
+  const [showHistory, setShowHistory] = useState(false);
+
+  const defaultMessages = [
     { role: 'model', content: "I'm Buffon AI. I know your rules, your sizing, and your UGM schedule. Are you here to follow the system or donate money to the market today?" }
-  ]);
+  ];
+  const [messages, setMessages] = useState(defaultMessages);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [dynamicChips, setDynamicChips] = useState([
+    'Should I trade right now? Check my stats.',
+    'Critique my last trade.',
+    'I feel like revenge trading.'
+  ]);
   
   const messagesEndRef = useRef(null);
 
+  // Auto-scroll
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !showHistory) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isOpen]);
+  }, [messages, isOpen, showHistory]);
+
+  // Persist conversations
+  useEffect(() => {
+    localStorage.setItem('buffon_ai_chats', JSON.stringify(conversations));
+  }, [conversations]);
+
+  // Resizer Logic
+  const handleMouseDown = (e) => {
+    isResizing.current = true;
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isResizing.current) return;
+    const newWidth = window.innerWidth - e.clientX;
+    if (newWidth > 320 && newWidth < window.innerWidth * 0.9) {
+      setDrawerWidth(newWidth);
+    }
+  };
+
+  const handleMouseUp = () => {
+    isResizing.current = false;
+    localStorage.setItem('buffon_coach_width', drawerWidth);
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  };
 
   const handleSaveKey = () => {
     if (tempKey.trim()) {
@@ -45,6 +94,19 @@ export default function TradingCoach({
     setApiKey('');
     setTempKey('');
     setIsConfiguring(true);
+  };
+
+  const handleNewChat = () => {
+    setActiveChatId(generateId());
+    setMessages(defaultMessages);
+    setShowHistory(false);
+    setDynamicChips(['Should I trade right now?', 'Review my psychology', 'Remind me of sizing rules']);
+  };
+
+  const handleLoadChat = (conv) => {
+    setActiveChatId(conv.id);
+    setMessages(conv.messages);
+    setShowHistory(false);
   };
 
   const constructDynamicContext = () => {
@@ -74,21 +136,37 @@ ${recent || 'No recent trades logged.'}
 
     const userMessage = input.trim();
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    const updatedMessages = [...messages, { role: 'user', content: userMessage }];
+    setMessages(updatedMessages);
     setIsLoading(true);
 
-    const fullSystemInstruction = COACH_SYSTEM_PROMPT + '\n\n' + constructDynamicContext();
+    const INTERNAL_PREAMBLE = `Before every response, internally assess:
+1. What is the user's emotional state?
+2. What do they actually need vs what they asked?
+3. Is this a behavioral violation I should flag?
+4. What would Hengky Adinata say about this?
+Then respond.
 
-    const apiMessages = messages.map(m => ({
+CRITICAL INSTRUCTION: Always append a JSON block at the very end of your response formatted exactly like this:
+\`\`\`json
+{
+  "suggested_actions": ["Option 1", "Option 2", "Option 3"]
+}
+\`\`\`
+`;
+    const fullSystemInstruction = INTERNAL_PREAMBLE + COACH_SYSTEM_PROMPT + '\n\n' + constructDynamicContext();
+
+    const apiMessages = updatedMessages.map(m => ({
       role: m.role === 'model' ? 'model' : 'user',
       parts: [{ text: m.content }]
     }));
-    
-    apiMessages.push({ role: 'user', parts: [{ text: userMessage }] });
 
     const payload = {
       systemInstruction: { parts: [{ text: fullSystemInstruction }] },
-      contents: apiMessages
+      contents: apiMessages,
+      generationConfig: {
+        temperature: 0.7
+      }
     };
 
     try {
@@ -101,13 +179,52 @@ ${recent || 'No recent trades logged.'}
       const data = await response.json();
       
       if (data.error) {
-        setMessages(prev => [...prev, { role: 'model', content: `API Error: ${data.error.message}` }]);
+        const errorMsg = `API Error: ${data.error.message}`;
+        setMessages([...updatedMessages, { role: 'model', content: errorMsg }]);
       } else if (data.candidates && data.candidates[0].content) {
-        const botReply = data.candidates[0].content.parts[0].text;
-        setMessages(prev => [...prev, { role: 'model', content: botReply }]);
+        const botReplyRaw = data.candidates[0].content.parts[0].text;
+        
+        let cleanReply = botReplyRaw;
+        let extractedSuggestions = [];
+        
+        // Extract JSON block for chips
+        const jsonMatch = botReplyRaw.match(/```json\s*(\{[\s\S]*?\})\s*```/);
+        if (jsonMatch) {
+          try {
+            const parsed = JSON.parse(jsonMatch[1]);
+            if (parsed.suggested_actions && Array.isArray(parsed.suggested_actions)) {
+              extractedSuggestions = parsed.suggested_actions;
+            }
+            cleanReply = botReplyRaw.replace(jsonMatch[0], '').trim();
+          } catch(e) {
+            console.error("Failed to parse JSON suggestions", e);
+          }
+        }
+        
+        if (extractedSuggestions.length > 0) {
+          setDynamicChips(extractedSuggestions);
+        }
+
+        const finalMessages = [...updatedMessages, { role: 'model', content: cleanReply }];
+        setMessages(finalMessages);
+
+        // Update Conversations DB
+        setConversations(prev => {
+          const existing = prev.find(c => c.id === activeChatId);
+          if (existing) {
+            return prev.map(c => c.id === activeChatId ? { ...c, messages: finalMessages, updatedAt: new Date().toISOString() } : c);
+          } else {
+            return [{
+              id: activeChatId,
+              title: userMessage.substring(0, 30) + (userMessage.length > 30 ? '...' : ''),
+              messages: finalMessages,
+              updatedAt: new Date().toISOString()
+            }, ...prev];
+          }
+        });
       }
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'model', content: "Network error. Make sure your internet is working and the API key is valid." }]);
+      setMessages([...updatedMessages, { role: 'model', content: "Network error. Make sure your internet is working and the API key is valid." }]);
     } finally {
       setIsLoading(false);
     }
@@ -118,10 +235,6 @@ ${recent || 'No recent trades logged.'}
       e.preventDefault();
       handleSend();
     }
-  };
-
-  const handleSuggestion = (text) => {
-    setInput(text);
   };
 
   const parseMarkdown = (text) => {
@@ -140,23 +253,18 @@ ${recent || 'No recent trades logged.'}
 
   return (
     <>
-      {/* Toggle Button on the right edge */}
-      <div 
-        className="ai-coach-toggle-btn" 
-        onClick={() => setIsOpen(true)}
-      >
+      <div className="ai-coach-toggle-btn" onClick={() => setIsOpen(true)}>
         <Brain size={18} />
         <span>AI COACH</span>
       </div>
 
-      {/* Overlay */}
-      <div 
-        className={`ai-coach-overlay ${isOpen ? 'open' : ''}`}
-        onClick={() => setIsOpen(false)}
-      />
+      <div className={`ai-coach-overlay ${isOpen ? 'open' : ''}`} onClick={() => setIsOpen(false)} />
 
-      {/* Slide-out Drawer */}
-      <div className={`ai-coach-drawer ${isOpen ? 'open' : ''}`}>
+      <div 
+        className={`ai-coach-drawer ${isOpen ? 'open' : ''}`}
+        style={{ '--drawer-width': `${drawerWidth}px` }}
+      >
+        <div className="ai-drawer-resizer" onMouseDown={handleMouseDown} />
         
         <div className="ai-coach-header">
           <div className="ai-coach-title">
@@ -168,12 +276,58 @@ ${recent || 'No recent trades logged.'}
             </div>
           </div>
           <div className="ai-coach-actions">
-            <button className="ai-coach-btn" onClick={() => setIsConfiguring(!isConfiguring)}>
+            {!isConfiguring && (
+              <button 
+                className="ai-coach-btn" 
+                onClick={() => setShowHistory(!showHistory)}
+                title="Chat History"
+                style={{ backgroundColor: showHistory ? 'var(--bg-secondary)' : 'transparent' }}
+              >
+                <Clock size={18} />
+              </button>
+            )}
+            <button className="ai-coach-btn" onClick={() => setIsConfiguring(!isConfiguring)} title="Settings">
               <Settings size={18} />
             </button>
             <button className="ai-coach-btn" onClick={() => setIsOpen(false)}>
               <X size={18} />
             </button>
+          </div>
+        </div>
+
+        {/* History Sidebar Panel */}
+        <div className={`ai-coach-history-panel ${showHistory ? 'open' : ''}`}>
+          <div className="ai-history-header">
+            <h3 style={{ fontSize: 14, margin: 0 }}>Conversation History</h3>
+            <button 
+              className="ai-coach-btn" 
+              onClick={handleNewChat}
+              style={{ backgroundColor: 'var(--accent)', color: 'white', padding: '4px 8px' }}
+            >
+              <Plus size={16} style={{ marginRight: 4 }} /> New Chat
+            </button>
+          </div>
+          <div className="ai-history-list">
+            {conversations.length === 0 ? (
+              <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-secondary)', fontSize: 13 }}>
+                No past conversations.
+              </div>
+            ) : (
+              conversations.map(conv => (
+                <div 
+                  key={conv.id} 
+                  className={`ai-history-item ${activeChatId === conv.id ? 'active' : ''}`}
+                  onClick={() => handleLoadChat(conv)}
+                >
+                  <div className="ai-history-item-date">
+                    {new Date(conv.updatedAt).toLocaleDateString()} {new Date(conv.updatedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                  </div>
+                  <div className="ai-history-item-preview">
+                    {conv.title}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -235,10 +389,11 @@ ${recent || 'No recent trades logged.'}
 
             <div className="ai-coach-input-area">
               <div className="ai-suggestion-chips">
-                <div className="ai-chip" onClick={() => handleSuggestion('Should I trade right now? Check my stats.')}>Should I trade?</div>
-                <div className="ai-chip" onClick={() => handleSuggestion('Critique my last trade.')}>Critique last trade</div>
-                <div className="ai-chip" onClick={() => handleSuggestion('I feel like revenge trading.')}>I feel like revenge trading</div>
-                <div className="ai-chip" onClick={() => handleSuggestion('Remind me of the sizing rules.')}>Sizing rules</div>
+                {dynamicChips.map((chipText, i) => (
+                  <div key={i} className="ai-chip" onClick={() => setInput(chipText)}>
+                    {chipText}
+                  </div>
+                ))}
               </div>
               
               <div className="ai-input-wrapper">
