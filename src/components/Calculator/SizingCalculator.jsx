@@ -85,12 +85,24 @@ export default function SizingCalculator({
     return IDR_SIZING.find(tier => rate >= tier.min && rate <= tier.max) || IDR_SIZING[3];
   }, [todaysGate]);
 
-  const riskPct = activeSizingTier ? activeSizingTier.riskPct : tierConfig.riskPct;
   const maxCapPct = activeSizingTier ? activeSizingTier.maxCapPct : MAX_CAP_PCT;
+
+  const [customCapital, setCustomCapital] = useState(capital);
+  const [customRiskPct, setCustomRiskPct] = useState(0);
+
+  useEffect(() => {
+    setCustomCapital(capital);
+  }, [capital]);
+
+  useEffect(() => {
+    const defaultRisk = activeSizingTier ? activeSizingTier.riskPct : tierConfig.riskPct;
+    setCustomRiskPct(defaultRisk);
+  }, [activeSizingTier, tierConfig.riskPct]);
 
   // Main sizing calculation
   useEffect(() => {
-    const cap = capital;
+    const cap = parseFloat(customCapital) || 0;
+    const currentRisk = parseFloat(customRiskPct) || 0;
     const e = parseFloat(entry) || 0;
     const s = parseFloat(sl) || 0;
     const t1 = parseFloat(tp1) || 0;
@@ -105,7 +117,7 @@ export default function SizingCalculator({
       return;
     }
 
-    const maxLoss = cap * (riskPct / 100);
+    const maxLoss = cap * (currentRisk / 100);
     const maxPosValue = cap * maxCapPct;
     const diff = e - s;
     const slPercent = (diff / e) * 100;
@@ -166,7 +178,7 @@ export default function SizingCalculator({
         text: warningMsg || `✓ System compliant. Exact risk is ${fmtRp(cappedLots * diff)}.`,
       });
     }
-  }, [entry, sl, tp1, tp2, capital, riskPct, maxCapPct, onResultsChange, todaysGate]);
+  }, [entry, sl, tp1, tp2, customCapital, customRiskPct, maxCapPct, onResultsChange, todaysGate]);
 
   function handleAddToTracker() {
     if (cooldownTimeLeft > 0) {
@@ -199,6 +211,28 @@ export default function SizingCalculator({
 
       <div className="field-row">
         <div className="field">
+          <label>Modal Active (Rp)</label>
+          <input
+            type="number"
+            value={customCapital}
+            onChange={e => setCustomCapital(e.target.value)}
+            style={{ fontWeight: 700 }}
+          />
+        </div>
+        <div className="field">
+          <label>Risk per trade (%)</label>
+          <input
+            type="number"
+            value={customRiskPct}
+            onChange={e => setCustomRiskPct(e.target.value)}
+            step="0.1"
+            style={{ fontWeight: 700 }}
+          />
+        </div>
+      </div>
+
+      <div className="field-row">
+        <div className="field">
           <label>Ticker</label>
           <input
             type="text"
@@ -210,25 +244,15 @@ export default function SizingCalculator({
           />
         </div>
         <div className="field">
-          <label>Modal Active (Rp)</label>
+          <label>Harga Entry (Rp)</label>
           <input
-            type="text"
-            value={fmtRp(capital)}
-            readOnly
-            style={{ fontWeight: 700, color: 'var(--accent)', cursor: 'default' }}
+            type="number"
+            value={entry}
+            onChange={e => setEntry(e.target.value)}
+            placeholder="0"
+            step="1"
           />
         </div>
-      </div>
-
-      <div className="field">
-        <label>Harga Entry (Rp)</label>
-        <input
-          type="number"
-          value={entry}
-          onChange={e => setEntry(e.target.value)}
-          placeholder="0"
-          step="1"
-        />
       </div>
 
       <div className="field-row">
@@ -299,8 +323,7 @@ export default function SizingCalculator({
               <div className="result-label">Max Rugi</div>
               <div className="result-val">{fmtRp(results.maxLoss)}</div>
               <div className="result-sub">
-                {riskPct.toFixed(2)}% Modal 
-                {activeSizingTier && <span style={{ color: 'var(--accent)', marginLeft: 4 }} title="Locked based on USD/IDR rate">🔒</span>}
+                {(parseFloat(customRiskPct) || 0).toFixed(2)}% Modal 
               </div>
             </div>
             <div className="result-box success">
