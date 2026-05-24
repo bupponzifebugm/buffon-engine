@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, X, Settings, Send, Brain, Key, Clock, Plus } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { COACH_SYSTEM_PROMPT } from '../../lib/coachPrompt';
 import './TradingCoach.css';
 
@@ -272,20 +273,6 @@ CRITICAL INSTRUCTION: Always append a JSON block at the very end of your respons
     }
   };
 
-  const parseMarkdown = (text) => {
-    if (!text) return null;
-    const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g);
-    return parts.map((part, i) => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={i}>{part.slice(2, -2)}</strong>;
-      }
-      if (part.startsWith('`') && part.endsWith('`')) {
-        return <code key={i} style={{ backgroundColor: 'var(--bg-secondary)', padding: '2px 4px', borderRadius: '4px', fontFamily: 'monospace' }}>{part.slice(1, -1)}</code>;
-      }
-      return <span key={i}>{part}</span>;
-    });
-  };
-
   return (
     <>
       <div className="ai-coach-toggle-btn" onClick={() => setIsOpen(true)}>
@@ -407,7 +394,9 @@ CRITICAL INSTRUCTION: Always append a JSON block at the very end of your respons
               {messages.map((msg, idx) => (
                 <div key={idx} className={`ai-message ${msg.role}`}>
                   <div className="ai-message-content">
-                    {parseMarkdown(msg.content)}
+                    <ReactMarkdown className="markdown-wrapper">
+                      {msg.content}
+                    </ReactMarkdown>
                   </div>
                 </div>
               ))}
