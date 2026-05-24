@@ -133,7 +133,7 @@ export default function MindsetPanel({ profile, onUpdateProfile }) {
                       placeholder="e.g. Macroeconomics v3" 
                       value={newClassName} 
                       onChange={e => setNewClassName(e.target.value)} 
-                      style={{ flex: 1 }}
+                      style={{ flex: 1, color: 'var(--text-primary)', background: 'var(--bg-tertiary)', caretColor: 'var(--accent)' }}
                     />
                     <button className="btn" onClick={handleAddClass} style={{ margin: 0, padding: '6px 12px', display: 'flex', alignItems: 'center' }}>
                       <Plus size={14} /> Add

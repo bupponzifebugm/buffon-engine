@@ -336,6 +336,10 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
   const [showReportCard, setShowReportCard] = useState(false);
   const reportRef = useRef(null);
 
+  // Bounty editor state
+  const [bountyName, setBountyName] = useState(gamificationState?.custom_bounty?.name || 'Self Reward');
+  const [bountyTarget, setBountyTarget] = useState(gamificationState?.custom_bounty?.target_rr?.toString() || '500');
+
   const gState = gamificationState || {
     heavy_shield: 0, ult_points: 0, is_eco_round: false, is_ult_active: false,
     xp_patience: 0, xp_execution: 0, xp_risk: 0, custom_bounty: { current_rr: 0, target_rr: 500, name: 'Self Reward' }
@@ -459,6 +463,10 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
             <Target size={16} style={{ color: 'var(--accent)' }} />
             Combat Stats & Skills
           </div>
+          <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginBottom: 12, lineHeight: 1.5, background: 'var(--bg-tertiary)', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)' }}>
+            <strong>K/D/A</strong> = Kills (wins ≥ 0.5R) / Deaths (losses ≤ -0.5R) / Assists (scratches). <br/>
+            <strong>Skill Trees</strong> level up automatically when you tick Process Checkboxes on every trade. 100% process = +30 XP, 66% = +20 XP, 33% = +10 XP. Every 100 XP = 1 Level Up.
+          </div>
           <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
             <div style={{ flex: 1, background: 'var(--bg-tertiary)', padding: 8, borderRadius: 8, textAlign: 'center' }}>
               <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>K/D/A</div>
@@ -488,7 +496,7 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
                   <span style={{ color: 'var(--accent)' }}>{skill.xp % 100}/100 XP</span>
                 </div>
                 <div style={{ height: 4, background: 'var(--bg-tertiary)', borderRadius: 2 }}>
-                  <div style={{ width: `${skill.xp % 100}%`, height: '100%', background: 'var(--accent)', borderRadius: 2 }} />
+                  <div style={{ width: `${skill.xp % 100}%`, height: '100%', background: 'var(--accent)', borderRadius: 2, transition: 'width 0.5s ease' }} />
                 </div>
               </div>
             ))}
@@ -499,30 +507,33 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
         <div className="card">
           <div className="card-title">
             <Shield size={16} style={{ color: 'var(--accent)' }} />
-            Active Buffs <span title="Heavy Shield absorbs 100% of RR loss on a bad trade if fully charged. Ultimate doubles the RR gain on your next good trade." style={{ fontSize: 10, color: 'var(--text-secondary)', cursor: 'help', marginLeft: 6 }}>(?)</span>
+            Active Buffs
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginBottom: 12, lineHeight: 1.5, background: 'var(--bg-tertiary)', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)' }}>
+            <strong>Heavy Shield</strong> — Charged by logging trades with 100% process score (+20% each). When full (100%), it blocks the next RR loss entirely, then resets to 0%.<br/>
+            <strong>Ultimate</strong> — Earn 1 charge per good-process trade (≥ 66%). At 6/6, press "Activate" → your next win with good process gives <strong>2× RR</strong>.
           </div>
           
           {/* Heavy Shield */}
           <div style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-              <span style={{ fontWeight: 600, color: gState.heavy_shield === 100 ? 'var(--success)' : 'var(--text-primary)' }}>Heavy Shield</span>
-              <span style={{ color: 'var(--text-secondary)' }}>{gState.heavy_shield}%</span>
+              <span style={{ fontWeight: 600, color: gState.heavy_shield === 100 ? 'var(--success)' : 'var(--text-primary)' }}>🛡️ Heavy Shield</span>
+              <span style={{ fontWeight: 700, color: gState.heavy_shield === 100 ? 'var(--success)' : 'var(--text-secondary)' }}>{gState.heavy_shield}%{gState.heavy_shield === 100 ? ' ✓ READY' : ''}</span>
             </div>
             <div style={{ height: 8, background: 'var(--bg-tertiary)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--border)' }}>
-              <div style={{ width: `${gState.heavy_shield}%`, height: '100%', background: gState.heavy_shield === 100 ? 'var(--success)' : 'var(--text-secondary)', transition: 'width 0.3s' }} />
+              <div style={{ width: `${gState.heavy_shield}%`, height: '100%', background: gState.heavy_shield === 100 ? 'var(--success)' : 'var(--accent)', transition: 'width 0.5s ease', boxShadow: gState.heavy_shield === 100 ? '0 0 8px var(--success)' : 'none' }} />
             </div>
-            <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 4 }}>Absorbs 1 RR Loss. Charges via 100% process trades.</div>
           </div>
 
           {/* Ultimate */}
-          <div style={{ marginBottom: 16 }}>
+          <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-              <span style={{ fontWeight: 600, color: gState.ult_points === 6 ? 'var(--danger)' : 'var(--text-primary)' }}>Ultimate: Double RR</span>
-              <span style={{ color: 'var(--text-secondary)' }}>{gState.ult_points}/6</span>
+              <span style={{ fontWeight: 600, color: gState.ult_points === 6 ? 'var(--danger)' : 'var(--text-primary)' }}>🔥 Ultimate: Double RR</span>
+              <span style={{ fontWeight: 700, color: gState.ult_points === 6 ? 'var(--danger)' : 'var(--text-secondary)' }}>{gState.ult_points}/6</span>
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
               {[1,2,3,4,5,6].map(pt => (
-                <div key={pt} style={{ flex: 1, height: 8, borderRadius: 2, background: pt <= gState.ult_points ? (gState.ult_points === 6 ? 'var(--danger)' : 'var(--accent)') : 'var(--bg-tertiary)' }} />
+                <div key={pt} style={{ flex: 1, height: 8, borderRadius: 2, background: pt <= gState.ult_points ? (gState.ult_points === 6 ? 'var(--danger)' : 'var(--accent)') : 'var(--bg-tertiary)', transition: 'background 0.3s' }} />
               ))}
             </div>
             {gState.ult_points === 6 && !gState.is_ult_active && (
@@ -530,12 +541,12 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
                 onClick={() => updateGamificationState?.({ is_ult_active: true })}
                 style={{ width: '100%', marginTop: 8, background: 'var(--danger-bg)', color: 'var(--danger)', border: '1px solid var(--danger)', padding: '6px', borderRadius: 4, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
               >
-                ACTIVATE ULTIMATE
+                ⚡ ACTIVATE ULTIMATE
               </button>
             )}
             {gState.is_ult_active && (
               <div style={{ marginTop: 8, color: 'var(--danger)', fontSize: 11, fontWeight: 700, textAlign: 'center', animation: 'pulse 1.5s infinite' }}>
-                ULTIMATE ACTIVE ON NEXT TRADE
+                🔥 ULTIMATE ACTIVE ON NEXT TRADE
               </div>
             )}
           </div>
@@ -547,34 +558,77 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
             <Star size={16} style={{ color: 'var(--accent)' }} />
             Missions & Bounties
           </div>
+          <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginBottom: 12, lineHeight: 1.5, background: 'var(--bg-tertiary)', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)' }}>
+            <strong>Eco Round</strong> — Start this when you're on a losing streak. Trade at half size. If your next trade has ≥ 66% process, you earn a +15 RR recovery bonus.<br/>
+            <strong>Custom Bounty</strong> — Set a personal reward (sneakers, sushi, etc.) and a target RR. Every trade fills the bar. Hit 100% → go withdraw and buy it!
+          </div>
           
+          {/* Eco Round */}
           <div style={{ background: gState.is_eco_round ? 'var(--success-bg)' : 'var(--bg-tertiary)', padding: 12, borderRadius: 8, marginBottom: 16, border: gState.is_eco_round ? '1px solid var(--success)' : '1px solid transparent' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: gState.is_eco_round ? 'var(--success)' : 'var(--text-primary)' }}>Eco Round</div>
-                <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 2 }}>Half size, +15 RR bonus if clean.</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: gState.is_eco_round ? 'var(--success)' : 'var(--text-primary)' }}>🏥 Eco Round</div>
+                <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 2 }}>Half size, +15 RR bonus if clean process.</div>
               </div>
               {!gState.is_eco_round ? (
                 <button 
                   onClick={() => updateGamificationState?.({ is_eco_round: true })}
-                  style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '4px 8px', borderRadius: 4, fontSize: 10, cursor: 'pointer' }}
+                  style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '4px 10px', borderRadius: 4, fontSize: 10, cursor: 'pointer', fontWeight: 600 }}
                 >
                   Start Eco
                 </button>
               ) : (
-                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--success)' }}>ACTIVE</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--success)', background: 'var(--success-bg)', padding: '2px 8px', borderRadius: 4 }}>ACTIVE</span>
               )}
             </div>
           </div>
 
+          {/* Custom Bounty — Editable */}
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-              <span style={{ fontWeight: 600 }}>Bounty: {gState.custom_bounty?.name || 'Self Reward'}</span>
-              <span style={{ color: 'var(--accent)' }}>{gState.custom_bounty?.current_rr || 0} / {gState.custom_bounty?.target_rr || 500} RR</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 8 }}>
+              <span style={{ fontWeight: 600 }}>🎁 Custom Bounty</span>
+              <span style={{ color: 'var(--accent)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{gState.custom_bounty?.current_rr || 0} / {gState.custom_bounty?.target_rr || 500} RR</span>
             </div>
-            <div style={{ height: 6, background: 'var(--bg-tertiary)', borderRadius: 3, overflow: 'hidden' }}>
-              <div style={{ width: `${Math.min(100, ((gState.custom_bounty?.current_rr || 0) / (gState.custom_bounty?.target_rr || 500)) * 100)}%`, height: '100%', background: 'var(--accent)' }} />
+            <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+              <input
+                type="text"
+                placeholder="e.g. New Sneakers"
+                value={bountyName}
+                onChange={e => setBountyName(e.target.value)}
+                style={{ flex: 2, padding: '6px 10px', fontSize: 12, background: 'var(--bg-tertiary)', border: '1px solid var(--border)', borderRadius: 4, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)', outline: 'none' }}
+              />
+              <input
+                type="number"
+                placeholder="RR Target"
+                value={bountyTarget}
+                onChange={e => setBountyTarget(e.target.value)}
+                style={{ flex: 1, padding: '6px 10px', fontSize: 12, background: 'var(--bg-tertiary)', border: '1px solid var(--border)', borderRadius: 4, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', outline: 'none' }}
+              />
+              <button
+                onClick={() => {
+                  if (bountyName.trim() && bountyTarget) {
+                    updateGamificationState?.({
+                      custom_bounty: {
+                        name: bountyName.trim(),
+                        target_rr: parseInt(bountyTarget, 10) || 500,
+                        current_rr: gState.custom_bounty?.current_rr || 0
+                      }
+                    });
+                  }
+                }}
+                style={{ padding: '6px 10px', fontSize: 10, fontWeight: 700, background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+              >
+                Set
+              </button>
             </div>
+            <div style={{ height: 6, background: 'var(--bg-tertiary)', borderRadius: 3, overflow: 'hidden', border: '1px solid var(--border)' }}>
+              <div style={{ width: `${Math.min(100, ((gState.custom_bounty?.current_rr || 0) / (gState.custom_bounty?.target_rr || 500)) * 100)}%`, height: '100%', background: 'linear-gradient(90deg, var(--accent), var(--success))', transition: 'width 0.5s ease' }} />
+            </div>
+            {(gState.custom_bounty?.current_rr || 0) >= (gState.custom_bounty?.target_rr || 500) && (
+              <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: 'var(--success)', textAlign: 'center' }}>
+                🎉 Bounty Complete! Withdraw and go buy your {gState.custom_bounty?.name || 'reward'}!
+              </div>
+            )}
           </div>
         </div>
       </div>
