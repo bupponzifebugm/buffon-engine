@@ -92,7 +92,7 @@ ${recent || 'No recent trades logged.'}
     };
 
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -122,6 +122,20 @@ ${recent || 'No recent trades logged.'}
 
   const handleSuggestion = (text) => {
     setInput(text);
+  };
+
+  const parseMarkdown = (text) => {
+    if (!text) return null;
+    const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={i}>{part.slice(2, -2)}</strong>;
+      }
+      if (part.startsWith('`') && part.endsWith('`')) {
+        return <code key={i} style={{ backgroundColor: 'var(--bg-secondary)', padding: '2px 4px', borderRadius: '4px', fontFamily: 'monospace' }}>{part.slice(1, -1)}</code>;
+      }
+      return <span key={i}>{part}</span>;
+    });
   };
 
   return (
@@ -204,7 +218,7 @@ ${recent || 'No recent trades logged.'}
               {messages.map((msg, idx) => (
                 <div key={idx} className={`ai-message ${msg.role}`}>
                   <div className="ai-message-content">
-                    {msg.content}
+                    {parseMarkdown(msg.content)}
                   </div>
                 </div>
               ))}
