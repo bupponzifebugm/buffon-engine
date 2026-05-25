@@ -124,19 +124,20 @@ export default function SizingCalculator({
 
     const rawShares = maxLoss / diff;
     const posValUncapped = Math.floor(rawShares / 100) * 100 * e;
-    const cappedLots = Math.floor(Math.min(posValUncapped, maxPosValue) / e / 100) * 100;
-    const finalPosVal = cappedLots * e;
+    const cappedShares = Math.floor(Math.min(posValUncapped, maxPosValue) / e / 100) * 100;
+    const finalPosVal = cappedShares * e;
 
     let rr = '—';
     if (t2 > e && s < e) rr = ((t2 - e) / diff).toFixed(2) + ':1';
 
-    const t1Shares = Math.floor(cappedLots * 0.40 / 100) * 100;
+    const t1Shares = Math.floor(cappedShares * 0.40 / 100) * 100;
     const t2Shares = t1Shares;
-    const runnerShares = cappedLots - (t1Shares * 2);
+    const runnerShares = cappedShares - (t1Shares * 2);
 
     const calculatedResults = {
-      maxLoss: cappedLots * diff,
-      shares: cappedLots,
+      maxLoss: cappedShares * diff,
+      shares: cappedShares,
+      lots: cappedShares / 100,
       posVal: finalPosVal,
       posValPct: (finalPosVal / cap) * 100,
       rr,
@@ -170,12 +171,12 @@ export default function SizingCalculator({
     } else if (posValUncapped > maxPosValue) {
       setAlertInfo({
         type: 'danger',
-        text: warningMsg + `🚫 Max Position Cap Hit. Sizing scaled down to ${fmt(cappedLots)} lots (${(maxCapPct * 100).toFixed(0)}% Cap).`,
+        text: warningMsg + `🚫 Max Position Cap Hit. Sizing scaled down to ${fmt(cappedShares / 100)} lots (${(maxCapPct * 100).toFixed(0)}% Cap).`,
       });
     } else {
       setAlertInfo({
         type: warningType,
-        text: warningMsg || `✓ System compliant. Exact risk is ${fmtRp(cappedLots * diff)}.`,
+        text: warningMsg || `✓ System compliant. Exact risk is ${fmtRp(cappedShares * diff)}.`,
       });
     }
   }, [entry, sl, tp1, tp2, customCapital, customRiskPct, maxCapPct, onResultsChange, todaysGate]);
@@ -195,7 +196,7 @@ export default function SizingCalculator({
     }
     onOpenAddModal({
       ticker: ticker.toUpperCase(),
-      lots: results.shares,
+      lots: results.lots,
       entry_price: parseFloat(entry) || 0,
       sl_price: parseFloat(sl) || 0,
       tp1_price: parseFloat(tp1) || 0,
@@ -328,7 +329,7 @@ export default function SizingCalculator({
             </div>
             <div className="result-box success">
               <div className="result-label">Jumlah Saham</div>
-              <div className="result-val">{fmt(results.shares)}</div>
+              <div className="result-val">{fmt(results.lots)}</div>
               <div className="result-sub">Lot (dibulatkan)</div>
             </div>
             <div className="result-box">
