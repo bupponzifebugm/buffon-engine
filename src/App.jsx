@@ -37,7 +37,7 @@ import { TIERS } from './lib/constants';
 
 function App() {
   const { user, profile, loading: authLoading, signIn, signUp, signOut, updateProfile, updateGamificationState } = useAuth();
-  const { positions, dailyPnl, weeklyPnl, monthlyPnl, addPosition, deletePosition, clearPositions } = usePositions(user, profile, updateGamificationState);
+  const { positions, dailyPnl, weeklyPnl, monthlyPnl, addPosition, deletePosition, clearPositions, updatePosition } = usePositions(user, profile, updateGamificationState);
   const { challengeData, cleanStreak, currentTierKey, updateTrade, loading: challengeLoading } = useChallenge(user);
   const { todaysGate, isGateCompleted, submitGate, loading: gateLoading } = useMorningGate(user);
   const { notes, activeNote, createNote, openNote, updateNote, deleteNote, uploadImage } = useJournal(user);
@@ -162,7 +162,16 @@ function App() {
   }
 
   async function handleSavePosition(posData) {
-    await addPosition(posData);
+    if (addModalPrefill && addModalPrefill.id) {
+      await updatePosition(addModalPrefill.id, posData);
+    } else {
+      await addPosition(posData);
+    }
+  }
+
+  function handleEditPosition(pos) {
+    setAddModalPrefill(pos);
+    setAddModalOpen(true);
   }
 
   async function handleDeletePosition(id) {
@@ -302,6 +311,7 @@ function App() {
         <div className={`tab-content${activeTab === 'tab-risk' ? ' active' : ''}`}>
           <PositionsTable
             positions={positions}
+            onEditPosition={handleEditPosition}
             onDeletePosition={handleDeletePosition}
             onClearPositions={handleClearPositions}
           />

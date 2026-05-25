@@ -31,11 +31,11 @@ export default function AddTradeModal({ isOpen, onClose, onSave, prefill, gamifi
       setSlPrice(prefill.sl_price || '');
       setTp1Price(prefill.tp1_price || '');
       setTp2Price(prefill.tp2_price || '');
-      setStatus('closed');
-      setExitPrice('');
-      setEmotion('calm');
-      setIsViolation(false);
-      setViolationReason('');
+      setStatus(prefill.status || 'open');
+      setExitPrice(prefill.exit_price || '');
+      setEmotion(prefill.emotion || 'calm');
+      setIsViolation(prefill.is_violation || false);
+      setViolationReason(prefill.violation_reason || '');
       setProcSetup(true);
       setProcExecution(true);
       setProcRisk(true);

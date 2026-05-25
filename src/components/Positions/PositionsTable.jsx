@@ -1,8 +1,8 @@
 import { fmtRp, fmt, fmtDate } from '../../lib/utils';
 import { STATUS_CONFIG } from '../../lib/constants';
-import { Trash2, ShieldAlert } from 'lucide-react';
+import { Trash2, ShieldAlert, Edit2 } from 'lucide-react';
 
-export default function PositionsTable({ positions, onDeletePosition, onClearPositions }) {
+export default function PositionsTable({ positions, onEditPosition, onDeletePosition, onClearPositions }) {
   if (!positions.length) {
     return (
       <div className="card" style={{ marginTop: 0 }}>
@@ -134,6 +134,9 @@ export default function PositionsTable({ positions, onDeletePosition, onClearPos
                     <td style={{ color: pnlColor, fontWeight: 700 }}>{pnlText}</td>
                     <td style={{ color: rColor, fontWeight: 700, fontSize: 13, fontFamily: 'var(--font-mono)' }}>{rText}</td>
                     <td>
+                      <button className="btn-small" onClick={() => onEditPosition(p)} style={{ marginRight: 8 }}>
+                        <Edit2 size={12} />
+                      </button>
                       <button className="btn-small" onClick={() => onDeletePosition(p.id)}>
                         <Trash2 size={12} />
                       </button>
