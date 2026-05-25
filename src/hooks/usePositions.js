@@ -120,6 +120,9 @@ export function usePositions(user, profile, updateGamificationState) {
 
     if (!error && data) {
       setPositions(prev => [data, ...prev]);
+    } else if (error) {
+      console.error('Supabase Insert Error:', error);
+      alert('Error saving position: ' + error.message);
     }
   }
 
@@ -158,6 +161,9 @@ export function usePositions(user, profile, updateGamificationState) {
 
     if (!error && data) {
       setPositions(prev => prev.map(p => (p.id === id ? data : p)));
+    } else if (error) {
+      console.error('Supabase Update Error:', error);
+      alert('Error updating position: ' + error.message);
     }
   }
 
