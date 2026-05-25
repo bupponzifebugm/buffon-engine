@@ -28,74 +28,72 @@ export function usePositions(user, profile, updateGamificationState) {
     setLoading(false);
   }
 
-  async function addPosition(pos) {
-    if (!user) return;
+  async function processGamification(pos) {
+    if (!profile || !updateGamificationState) return pos.rr_awarded || 0;
+    if (pos.status === 'open' || pos.status === 'pending') return pos.rr_awarded || 0;
 
     let finalRR = pos.rr_awarded || 0;
+    const gState = profile.gamification_state || {
+      heavy_shield: 0, ult_points: 0, is_eco_round: false, is_ult_active: false,
+      xp_patience: 0, xp_execution: 0, xp_risk: 0, custom_bounty: { current_rr: 0, target_rr: 500 }
+    };
+
+    let newShield = gState.heavy_shield;
+    let newUlt = gState.ult_points;
+    let newIsUltActive = gState.is_ult_active;
+    let newEco = gState.is_eco_round;
     
-    if (profile && updateGamificationState && pos.status !== 'open') {
-      const gState = profile.gamification_state || {
-        heavy_shield: 0, ult_points: 0, is_eco_round: false, is_ult_active: false,
-        xp_patience: 0, xp_execution: 0, xp_risk: 0, custom_bounty: { current_rr: 0, target_rr: 500 }
-      };
+    const isWin = pos.pnl > 0;
+    const processScore = pos.process_score || 0;
+    const isPerfectProcess = processScore === 100;
 
-      let newShield = gState.heavy_shield;
-      let newUlt = gState.ult_points;
-      let newIsUltActive = gState.is_ult_active;
-      let newEco = gState.is_eco_round;
-      
-      const isWin = pos.pnl > 0;
-      const processScore = pos.process_score || 0;
-      const isPerfectProcess = processScore === 100;
-
-      // 1. First Win of the Day Bonus
-      const today = getTodayString();
-      const isFirstTradeToday = !positions.some(p => p.trade_date === today);
-      if (isFirstTradeToday && isPerfectProcess) {
-        finalRR += GAMIFICATION_CONFIG.FIRST_WIN_BONUS;
-      }
-
-      // 2. Ultimate Logic
-      if (gState.is_ult_active) {
-        if (isWin && processScore >= 66) {
-          finalRR *= 2; // Double RR!
-        }
-        newIsUltActive = false; // consume ult
-        newUlt = 0;
-      } else if (processScore >= 66) {
-        newUlt = Math.min(GAMIFICATION_CONFIG.ULT_MAX, newUlt + 1);
-      }
-
-      // 3. Heavy Shield Logic
-      if (finalRR < 0 && gState.heavy_shield >= GAMIFICATION_CONFIG.SHIELD_MAX) {
-        finalRR = 0; // Shield absorbed the RR loss
-        newShield = 0; // Shield breaks
-      } else if (isPerfectProcess) {
-        newShield = Math.min(GAMIFICATION_CONFIG.SHIELD_MAX, newShield + GAMIFICATION_CONFIG.SHIELD_INCREMENT);
-      }
-
-      // 4. Eco Round Logic
-      if (gState.is_eco_round && processScore >= 66) {
-        finalRR += 15; // Bonus for surviving Eco cleanly
-        newEco = false;
-      }
-
-      // 5. XP & Custom Bounty Gains
-      const xpGain = isPerfectProcess ? 30 : (processScore >= 66 ? 20 : (processScore >= 33 ? 10 : 0));
-      
-      await updateGamificationState({
-        heavy_shield: newShield,
-        ult_points: newUlt,
-        is_ult_active: newIsUltActive,
-        is_eco_round: newEco,
-        xp_execution: gState.xp_execution + xpGain,
-        xp_risk: gState.xp_risk + xpGain,
-        custom_bounty: {
-          ...gState.custom_bounty,
-          current_rr: Math.max(0, (gState.custom_bounty.current_rr || 0) + finalRR)
-        }
-      });
+    const today = getTodayString();
+    const isFirstTradeToday = !positions.some(p => p.trade_date === today);
+    if (isFirstTradeToday && isPerfectProcess) {
+      finalRR += GAMIFICATION_CONFIG.FIRST_WIN_BONUS;
     }
+
+    if (gState.is_ult_active) {
+      if (isWin && processScore >= 66) finalRR *= 2;
+      newIsUltActive = false;
+      newUlt = 0;
+    } else if (processScore >= 66) {
+      newUlt = Math.min(GAMIFICATION_CONFIG.ULT_MAX, newUlt + 1);
+    }
+
+    if (finalRR < 0 && gState.heavy_shield >= GAMIFICATION_CONFIG.SHIELD_MAX) {
+      finalRR = 0;
+      newShield = 0;
+    } else if (isPerfectProcess) {
+      newShield = Math.min(GAMIFICATION_CONFIG.SHIELD_MAX, newShield + GAMIFICATION_CONFIG.SHIELD_INCREMENT);
+    }
+
+    if (gState.is_eco_round && processScore >= 66) {
+      finalRR += 15;
+      newEco = false;
+    }
+
+    const xpGain = isPerfectProcess ? 30 : (processScore >= 66 ? 20 : (processScore >= 33 ? 10 : 0));
+    
+    await updateGamificationState({
+      heavy_shield: newShield,
+      ult_points: newUlt,
+      is_ult_active: newIsUltActive,
+      is_eco_round: newEco,
+      xp_execution: gState.xp_execution + xpGain,
+      xp_risk: gState.xp_risk + xpGain,
+      custom_bounty: {
+        ...gState.custom_bounty,
+        current_rr: Math.max(0, (gState.custom_bounty.current_rr || 0) + finalRR)
+      }
+    });
+
+    return finalRR;
+  }
+
+  async function addPosition(pos) {
+    if (!user) return;
+    const finalRR = await processGamification(pos);
 
     const { data, error } = await supabase
       .from('positions')
@@ -146,7 +144,11 @@ export function usePositions(user, profile, updateGamificationState) {
     if (!error) setPositions([]);
   }
 
-  async function updatePosition(id, updates) {
+  async function updatePosition(id, updates, isClosing = false) {
+    if (isClosing) {
+      updates.rr_awarded = await processGamification({ ...updates });
+    }
+
     const { data, error } = await supabase
       .from('positions')
       .update(updates)

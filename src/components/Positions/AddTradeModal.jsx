@@ -31,7 +31,7 @@ export default function AddTradeModal({ isOpen, onClose, onSave, prefill, gamifi
       setSlPrice(prefill.sl_price || '');
       setTp1Price(prefill.tp1_price || '');
       setTp2Price(prefill.tp2_price || '');
-      setStatus(prefill.status || 'open');
+      setStatus(prefill.status || 'pending');
       setExitPrice(prefill.exit_price || '');
       setEmotion(prefill.emotion || 'calm');
       setIsViolation(prefill.is_violation || false);
@@ -46,7 +46,7 @@ export default function AddTradeModal({ isOpen, onClose, onSave, prefill, gamifi
       setSlPrice('');
       setTp1Price('');
       setTp2Price('');
-      setStatus('open');
+      setStatus('pending');
       setExitPrice('');
       setEmotion('calm');
       setIsViolation(false);
@@ -166,6 +166,7 @@ export default function AddTradeModal({ isOpen, onClose, onSave, prefill, gamifi
           <div className="field">
             <label>Status</label>
             <select value={status} onChange={e => setStatus(e.target.value)}>
+              <option value="pending">Pending (Limit Order)</option>
               <option value="open">Open (SL Active)</option>
               <option value="tp1">TP1 Hit (SL @ BE)</option>
               <option value="closed">Closed (TP2 / Manual)</option>

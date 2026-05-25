@@ -835,6 +835,12 @@ ul.system-list b {
   color: var(--danger);
 }
 
+.st-pending {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px dashed var(--text-secondary);
+}
+
 .empty-state {
   text-align: center;
   padding: 48px 24px;

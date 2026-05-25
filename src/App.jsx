@@ -163,7 +163,9 @@ function App() {
 
   async function handleSavePosition(posData) {
     if (addModalPrefill && addModalPrefill.id) {
-      await updatePosition(addModalPrefill.id, posData);
+      const isClosing = (addModalPrefill.status === 'open' || addModalPrefill.status === 'pending') && 
+                        (posData.status !== 'open' && posData.status !== 'pending');
+      await updatePosition(addModalPrefill.id, posData, isClosing);
     } else {
       await addPosition(posData);
     }

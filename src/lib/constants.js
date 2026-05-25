@@ -95,10 +95,11 @@ export const DAILY_QUOTES = [
 
 // ─── STATUS CONFIGS ───
 export const STATUS_CONFIG = {
-  open:   { label: 'Open',     className: 'st-open' },
-  tp1:    { label: 'TP1 Hit',  className: 'st-tp1' },
-  closed: { label: 'Closed',   className: 'st-closed' },
-  sl:     { label: 'SL Hit',   className: 'st-sl' },
+  open:    { label: 'Open',     className: 'st-open' },
+  tp1:     { label: 'TP1 Hit',  className: 'st-tp1' },
+  closed:  { label: 'Closed',   className: 'st-closed' },
+  sl:      { label: 'SL Hit',   className: 'st-sl' },
+  pending: { label: 'Pending',  className: 'st-pending' },
 };
 
 // ─── IDR SIZING TIERS (Thesis v3.1) ───
