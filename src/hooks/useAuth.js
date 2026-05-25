@@ -27,6 +27,27 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Listen for real-time profile updates across devices
+  useEffect(() => {
+    if (!user) return;
+
+    const profileChannel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+        (payload) => {
+          console.log('Realtime profile update received', payload.new);
+          setProfile(payload.new);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(profileChannel);
+    };
+  }, [user]);
+
   async function fetchProfile(userId) {
     const { data, error } = await supabase
       .from('profiles')

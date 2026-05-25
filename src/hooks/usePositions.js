@@ -16,6 +16,27 @@ export function usePositions(user, profile, updateGamificationState) {
     fetchPositions();
   }, [user]);
 
+  // Listen for real-time positions updates across devices
+  useEffect(() => {
+    if (!user) return;
+
+    const positionsChannel = supabase
+      .channel('positions-db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'positions', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          console.log('Realtime positions update received', payload);
+          fetchPositions(); // Just refetch to keep logic simple and ensure sorting
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(positionsChannel);
+    };
+  }, [user]);
+
   async function fetchPositions() {
     setLoading(true);
     const { data, error } = await supabase
