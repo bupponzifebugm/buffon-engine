@@ -99,7 +99,8 @@ export const STATUS_CONFIG = {
   tp1:     { label: 'TP1 Hit',  className: 'st-tp1' },
   closed:  { label: 'Closed',   className: 'st-closed' },
   sl:      { label: 'SL Hit',   className: 'st-sl' },
-  pending: { label: 'Pending',  className: 'st-pending' },
+  pending:   { label: 'Pending',    className: 'st-pending' },
+  withdrawn: { label: 'Withdrawn',  className: 'st-withdrawn' },
 };
 
 // ─── IDR SIZING TIERS (Thesis v3.1) ───

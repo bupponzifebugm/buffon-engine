@@ -80,7 +80,7 @@ export default function AddTradeModal({ isOpen, onClose, onSave, prefill, gamifi
     else if (status === 'tp1') pnl = (t1 - e) * (l * 0.4) * 100;
 
     const roundedPnl = Math.round(pnl);
-    const rrResult = (status !== 'open') ? calcRR(processScore, roundedPnl) : null;
+    const rrResult = (status !== 'open' && status !== 'pending' && status !== 'withdrawn') ? calcRR(processScore, roundedPnl) : null;
 
     onSave({
       ticker: t,
@@ -167,6 +167,7 @@ export default function AddTradeModal({ isOpen, onClose, onSave, prefill, gamifi
             <label>Status</label>
             <select value={status} onChange={e => setStatus(e.target.value)}>
               <option value="pending">Pending (Limit Order)</option>
+              <option value="withdrawn">Withdrawn (Did Not Fill)</option>
               <option value="open">Open (SL Active)</option>
               <option value="tp1">TP1 Hit (SL @ BE)</option>
               <option value="closed">Closed (TP2 / Manual)</option>

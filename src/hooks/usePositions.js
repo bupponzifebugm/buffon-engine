@@ -51,7 +51,7 @@ export function usePositions(user, profile, updateGamificationState) {
 
   async function processGamification(pos) {
     if (!profile || !updateGamificationState) return pos.rr_awarded || 0;
-    if (pos.status === 'open' || pos.status === 'pending') return pos.rr_awarded || 0;
+    if (pos.status === 'open' || pos.status === 'pending' || pos.status === 'withdrawn') return pos.rr_awarded || 0;
 
     let finalRR = pos.rr_awarded || 0;
     const gState = profile.gamification_state || {

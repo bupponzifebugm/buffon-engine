@@ -841,6 +841,13 @@ ul.system-list b {
   border: 1px dashed var(--text-secondary);
 }
 
+.st-withdrawn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px dashed var(--text-secondary);
+  text-decoration: line-through;
+}
+
 .empty-state {
   text-align: center;
   padding: 48px 24px;
