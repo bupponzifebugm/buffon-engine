@@ -1,13 +1,152 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { Plus, Save, Trash2, Image, Type, Bold, Italic, List, Search } from 'lucide-react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { Plus, Save, Trash2, Search } from 'lucide-react';
+import { useCreateBlockNote } from "@blocknote/react";
+import { BlockNoteView } from "@blocknote/mantine";
+import "@blocknote/core/fonts/inter.css";
+import "@blocknote/mantine/style.css";
 import { JOURNAL_TEMPLATES } from '../../lib/constants';
 
 export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, onUpdateNote, onDeleteNote, onUploadImage }) {
-  const editorRef = useRef(null);
-  const fileInputRef = useRef(null);
   const [saveStatus, setSaveStatus] = useState('');
   const debounceRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [headings, setHeadings] = useState([]);
+
+  // Create the BlockNote editor
+  const editor = useCreateBlockNote({
+    uploadFile: async (file) => {
+      if (onUploadImage) {
+        const url = await onUploadImage(file);
+        return url || "";
+      }
+      return "";
+    }
+  });
+
+  // Extract headings for the Table of Contents
+  const extractHeadings = useCallback((blocks) => {
+    let h = [];
+    for (const block of blocks) {
+      if (block.type === 'heading') {
+        h.push({
+          id: block.id,
+          text: block.content?.[0]?.text || 'Untitled Heading',
+          level: block.props.level
+        });
+      }
+      if (block.children && block.children.length > 0) {
+        h = h.concat(extractHeadings(block.children));
+      }
+    }
+    return h;
+  }, []);
+
+  // Update editor content when activeNote changes
+  useEffect(() => {
+    if (!activeNote || !editor) return;
+
+    const loadContent = async () => {
+      if (!activeNote.content) {
+        editor.replaceBlocks(editor.document, []);
+        setHeadings([]);
+        return;
+      }
+
+      // Backwards Compatibility: If content is HTML, convert it to blocks
+      if (activeNote.content.trim().startsWith('<') && !activeNote.content.trim().startsWith('[')) {
+        try {
+          const blocks = await editor.tryParseHTMLToBlocks(activeNote.content);
+          editor.replaceBlocks(editor.document, blocks);
+          setHeadings(extractHeadings(blocks));
+        } catch (e) {
+          console.error("Failed to parse HTML to blocks", e);
+        }
+      } else {
+        // It's JSON blocks string
+        try {
+          const blocks = JSON.parse(activeNote.content);
+          editor.replaceBlocks(editor.document, blocks);
+          setHeadings(extractHeadings(blocks));
+        } catch (e) {
+          console.error("Failed to parse block JSON", e);
+          editor.replaceBlocks(editor.document, []);
+          setHeadings([]);
+        }
+      }
+    };
+    
+    loadContent();
+  }, [activeNote?.id, editor, extractHeadings]);
+
+  const handleAutoSave = useCallback(() => {
+    if (!activeNote) return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(() => {
+      const titleEl = document.getElementById('noteTitle');
+      const title = titleEl ? titleEl.value : activeNote.title;
+      const content = JSON.stringify(editor.document);
+
+      onUpdateNote(activeNote.id, { title, content });
+      setSaveStatus('✓ Saved');
+      setTimeout(() => setSaveStatus(''), 2000);
+    }, 1000);
+  }, [activeNote, editor, onUpdateNote]);
+
+  function handleForceSave() {
+    if (!activeNote) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    const titleEl = document.getElementById('noteTitle');
+    const title = titleEl ? titleEl.value : activeNote.title;
+    const content = JSON.stringify(editor.document);
+
+    onUpdateNote(activeNote.id, { title, content });
+    setSaveStatus('✓ Saved');
+    setTimeout(() => setSaveStatus(''), 2000);
+  }
+
+  function handleDelete() {
+    if (!activeNote) return;
+    if (confirm('Delete this journal entry?')) {
+      onDeleteNote(activeNote.id);
+    }
+  }
+
+  const applyTemplate = (label) => {
+    if (!activeNote) return;
+    const template = JOURNAL_TEMPLATES.find(t => t.label === label);
+    if (!template) return;
+
+    const todayStr = new Date().toLocaleDateString('id-ID', {
+      day: 'numeric', month: 'long', year: 'numeric'
+    });
+    
+    // We try to parse the template content (HTML) to blocks
+    const renderedContent = template.content.replace('${date}', todayStr);
+
+    const apply = async () => {
+      if (editor.document.length > 1 || (editor.document[0]?.content && editor.document[0].content.length > 0)) {
+        if (!confirm('This will overwrite current journal content. Continue?')) {
+          return;
+        }
+      }
+      
+      const blocks = await editor.tryParseHTMLToBlocks(renderedContent);
+      editor.replaceBlocks(editor.document, blocks);
+      setHeadings(extractHeadings(blocks));
+
+      const newTitle = `${template.label} - ${todayStr}`;
+      const titleEl = document.getElementById('noteTitle');
+      if (titleEl) {
+        titleEl.value = newTitle;
+      }
+      onUpdateNote(activeNote.id, { title: newTitle, content: JSON.stringify(blocks) });
+    };
+
+    apply();
+  };
 
   // Filter notes based on search query
   const filteredNotes = notes.filter(note => {
@@ -23,146 +162,10 @@ export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, o
     return titleMatch || contentMatch || dateMatch;
   });
 
-  // When activeNote changes, update editor content
-  useEffect(() => {
-    if (activeNote && editorRef.current) {
-      editorRef.current.innerHTML = activeNote.content || '';
-    }
-  }, [activeNote?.id]);
-
-  const handleAutoSave = useCallback(() => {
-    if (!activeNote) return;
-
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    debounceRef.current = setTimeout(() => {
-      const titleEl = document.getElementById('noteTitle');
-      const title = titleEl ? titleEl.value : activeNote.title;
-      const content = editorRef.current ? editorRef.current.innerHTML : '';
-
-      onUpdateNote(activeNote.id, { title, content });
-      setSaveStatus('✓ Saved');
-      setTimeout(() => setSaveStatus(''), 2000);
-    }, 1000);
-  }, [activeNote, onUpdateNote]);
-
-  function handleForceSave() {
-    if (!activeNote) return;
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    const titleEl = document.getElementById('noteTitle');
-    const title = titleEl ? titleEl.value : activeNote.title;
-    const content = editorRef.current ? editorRef.current.innerHTML : '';
-
-    onUpdateNote(activeNote.id, { title, content });
-    setSaveStatus('✓ Saved');
-    setTimeout(() => setSaveStatus(''), 2000);
-  }
-
-  function formatDoc(cmd, value = null) {
-    document.execCommand(cmd, false, value);
-    if (editorRef.current) editorRef.current.focus();
-    handleAutoSave();
-  }
-
-  async function handleImageUpload(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file.');
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image size must be less than 5MB.');
-      return;
-    }
-
-    try {
-      const url = await onUploadImage(file);
-      if (url) {
-        formatDoc('insertImage', url);
-      }
-    } catch (err) {
-      alert('Failed to upload image: ' + err.message);
-    }
-
-    // Reset file input
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  }
-
-  function handleDelete() {
-    if (!activeNote) return;
-    if (confirm('Delete this journal entry?')) {
-      onDeleteNote(activeNote.id);
-    }
-  }
-
-  // Handle paste for images
-  function handlePaste(e) {
-    const items = e.clipboardData?.items;
-    if (!items) return;
-
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].type.startsWith('image/')) {
-        e.preventDefault();
-        const file = items[i].getAsFile();
-        if (file && onUploadImage) {
-          onUploadImage(file).then(url => {
-            if (url) formatDoc('insertImage', url);
-          }).catch(err => {
-            console.error('Paste upload failed:', err);
-          });
-        }
-        return;
-      }
-    }
-  }
-
-  // Handle drag & drop for images
-  function handleDrop(e) {
-    e.preventDefault();
-    const file = e.dataTransfer?.files?.[0];
-    if (file && file.type.startsWith('image/') && onUploadImage) {
-      onUploadImage(file).then(url => {
-        if (url) formatDoc('insertImage', url);
-      }).catch(err => {
-        console.error('Drop upload failed:', err);
-      });
-    }
-  }
-
-  function handleDragOver(e) {
-    e.preventDefault();
-  }
-
-  const applyTemplate = (label) => {
-    if (!activeNote) return;
-    const template = JOURNAL_TEMPLATES.find(t => t.label === label);
-    if (!template) return;
-
-    const todayStr = new Date().toLocaleDateString('id-ID', {
-      day: 'numeric', month: 'long', year: 'numeric'
-    });
-    const renderedContent = template.content.replace('${date}', todayStr);
-
-    if (editorRef.current) {
-      const currentContent = editorRef.current.innerHTML.trim();
-      if (currentContent && currentContent !== '<br>' && currentContent !== '') {
-        if (!confirm('This will overwrite current journal content. Continue?')) {
-          return;
-        }
-      }
-      editorRef.current.innerHTML = renderedContent;
-      const newTitle = `${template.label} - ${todayStr}`;
-      const titleEl = document.getElementById('noteTitle');
-      if (titleEl) {
-        titleEl.value = newTitle;
-      }
-      onUpdateNote(activeNote.id, { title: newTitle, content: renderedContent });
+  const handleHeadingClick = (id) => {
+    const el = document.querySelector(`[data-id="${id}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
@@ -194,20 +197,58 @@ export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, o
               {searchQuery ? 'No matching notes found.' : 'No notes yet.'}
             </div>
           ) : (
-            filteredNotes.map(note => (
-              <div
-                key={note.id}
-                className={`journal-item${activeNote?.id === note.id ? ' active' : ''}`}
-                onClick={() => onOpenNote(note.id)}
-              >
-                <div className="journal-item-title">{note.title || 'Untitled Entry'}</div>
-                <div className="journal-item-date">
-                  {new Date(note.created_at || note.id).toLocaleDateString('id-ID', {
-                    day: 'numeric', month: 'short'
-                  })}
+            filteredNotes.map(note => {
+              const isActive = activeNote?.id === note.id;
+              return (
+                <div key={note.id}>
+                  <div
+                    className={`journal-item${isActive ? ' active' : ''}`}
+                    onClick={() => onOpenNote(note.id)}
+                  >
+                    <div className="journal-item-title">{note.title || 'Untitled Entry'}</div>
+                    <div className="journal-item-date">
+                      {new Date(note.created_at || note.id).toLocaleDateString('id-ID', {
+                        day: 'numeric', month: 'short'
+                      })}
+                    </div>
+                  </div>
+                  
+                  {/* Table of Contents for Active Note */}
+                  {isActive && headings.length > 0 && (
+                    <div className="journal-toc">
+                      {headings.map((h, i) => (
+                        <div 
+                          key={h.id + i} 
+                          className="toc-item"
+                          style={{
+                            paddingLeft: `${(h.level - 1) * 12 + 12}px`,
+                            fontSize: '12px',
+                            color: 'var(--text-secondary)',
+                            paddingTop: '6px',
+                            paddingBottom: '6px',
+                            cursor: 'pointer',
+                            borderLeft: '2px solid transparent',
+                          }}
+                          onClick={() => handleHeadingClick(h.id)}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.color = 'var(--text-primary)';
+                            e.currentTarget.style.borderLeft = '2px solid var(--accent)';
+                            e.currentTarget.style.background = 'var(--bg-secondary)';
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.color = 'var(--text-secondary)';
+                            e.currentTarget.style.borderLeft = '2px solid transparent';
+                            e.currentTarget.style.background = 'transparent';
+                          }}
+                        >
+                          {h.text}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -225,33 +266,7 @@ export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, o
             key={activeNote.id + '-title'}
           />
 
-          <div className="journal-toolbar">
-            <button onClick={() => formatDoc('formatBlock', 'H1')} title="Heading 1">
-              <Type size={14} />1
-            </button>
-            <button onClick={() => formatDoc('formatBlock', 'H2')} title="Heading 2">
-              <Type size={14} />2
-            </button>
-            <button onClick={() => formatDoc('bold')} title="Bold">
-              <Bold size={14} />
-            </button>
-            <button onClick={() => formatDoc('italic')} title="Italic">
-              <Italic size={14} />
-            </button>
-            <button onClick={() => formatDoc('insertUnorderedList')} title="List">
-              <List size={14} />
-            </button>
-            <button onClick={() => fileInputRef.current?.click()} title="Upload Image">
-              <Image size={14} /> Upload Image
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={handleImageUpload}
-            />
-
+          <div className="journal-toolbar" style={{ borderBottom: '1px solid var(--border)', paddingBottom: 12, marginBottom: 16 }}>
             <select
               onChange={(e) => {
                 const val = e.target.value;
@@ -267,12 +282,9 @@ export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, o
                 color: 'var(--text-primary)',
                 border: '1px solid var(--border-color)',
                 borderRadius: 4,
-                padding: '2px 6px',
+                padding: '4px 8px',
                 cursor: 'pointer',
                 outline: 'none',
-                height: 24,
-                display: 'inline-flex',
-                alignItems: 'center'
               }}
             >
               <option value="">⚡ Apply Template</option>
@@ -282,6 +294,9 @@ export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, o
             </select>
 
             <div style={{ flex: 1 }} />
+            <span style={{ fontSize: 12, color: 'var(--text-secondary)', marginRight: 12 }}>
+              Type '/' for commands
+            </span>
             <button
               onClick={handleDelete}
               style={{ borderColor: 'var(--danger)', color: 'var(--danger)', background: 'transparent' }}
@@ -296,18 +311,16 @@ export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, o
             </button>
           </div>
 
-          <div
-            ref={editorRef}
-            className="journal-editor"
-            contentEditable
-            suppressContentEditableWarning
-            onInput={handleAutoSave}
-            onPaste={handlePaste}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            placeholder="Start typing your thesis, daily reflections, or drag & drop images here..."
-            key={activeNote.id + '-editor'}
-          />
+          <div className="journal-editor-wrapper">
+            <BlockNoteView 
+              editor={editor} 
+              theme="dark"
+              onChange={() => {
+                setHeadings(extractHeadings(editor.document));
+                handleAutoSave();
+              }}
+            />
+          </div>
 
           {saveStatus && (
             <div className="note-save-status">{saveStatus}</div>
