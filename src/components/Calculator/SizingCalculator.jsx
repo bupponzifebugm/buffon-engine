@@ -11,6 +11,9 @@ export default function SizingCalculator({
   cooldownTimeLeft,
   ugmStatus
 }) {
+  const [calcMode, setCalcMode] = useState('new'); // 'new' | 'add'
+  const [existingLots, setExistingLots] = useState('');
+  const [existingEntry, setExistingEntry] = useState('');
   const [ticker, setTicker] = useState('');
   const [entry, setEntry] = useState('');
   const [slPct, setSlPct] = useState('5');
@@ -117,35 +120,73 @@ export default function SizingCalculator({
       return;
     }
 
-    const maxLoss = cap * (currentRisk / 100);
+    let remainingRiskBudget = cap * (currentRisk / 100);
     const maxPosValue = cap * maxCapPct;
+    let existingPosValue = 0;
+    let existingRisk = 0;
+    const extShares = (parseFloat(existingLots) || 0) * 100;
+    const extEntry = parseFloat(existingEntry) || 0;
+
+    if (calcMode === 'add') {
+      existingPosValue = extShares * extEntry;
+      // Existing risk based on NEW SL
+      existingRisk = extShares * (extEntry - s);
+      remainingRiskBudget -= existingRisk;
+    }
+
     const diff = e - s;
     const slPercent = (diff / e) * 100;
 
-    const rawShares = maxLoss / diff;
+    let rawShares = 0;
+    if (remainingRiskBudget > 0) {
+      rawShares = remainingRiskBudget / diff;
+    }
+
     const posValUncapped = Math.floor(rawShares / 100) * 100 * e;
-    const cappedShares = Math.floor(Math.min(posValUncapped, maxPosValue) / e / 100) * 100;
-    const finalPosVal = cappedShares * e;
+    const maxAllowedNewPosVal = Math.max(0, maxPosValue - existingPosValue);
+    
+    let cappedShares = 0;
+    if (remainingRiskBudget > 0 && maxAllowedNewPosVal > 0) {
+      cappedShares = Math.floor(Math.min(posValUncapped, maxAllowedNewPosVal) / e / 100) * 100;
+    }
+
+    const finalNewPosVal = cappedShares * e;
 
     let rr = '—';
     if (t2 > e && s < e) rr = ((t2 - e) / diff).toFixed(2) + ':1';
 
-    const t1Shares = Math.floor(cappedShares * 0.40 / 100) * 100;
+    let totalShares = cappedShares;
+    let totalMaxLoss = cappedShares * diff;
+    let totalPosVal = finalNewPosVal;
+    let avgPrice = e;
+
+    if (calcMode === 'add') {
+      totalShares = cappedShares + extShares;
+      totalPosVal = finalNewPosVal + existingPosValue;
+      if (totalShares > 0) {
+        avgPrice = totalPosVal / totalShares;
+      }
+      totalMaxLoss = (cappedShares * (e - s)) + existingRisk;
+    }
+
+    const t1Shares = Math.floor(totalShares * 0.40 / 100) * 100;
     const t2Shares = t1Shares;
-    const runnerShares = cappedShares - (t1Shares * 2);
+    const runnerShares = totalShares - (t1Shares * 2);
 
     const calculatedResults = {
-      maxLoss: cappedShares * diff,
-      shares: cappedShares,
-      lots: cappedShares / 100,
-      posVal: finalPosVal,
-      posValPct: (finalPosVal / cap) * 100,
+      maxLoss: totalMaxLoss,
+      shares: totalShares,
+      lots: cappedShares / 100, // Show the amount of new lots to add!
+      totalLots: totalShares / 100,
+      avgPrice,
+      posVal: totalPosVal,
+      posValPct: (totalPosVal / cap) * 100,
       rr,
-      tp1Display: t1 ? `${fmtRp(t1)} (+${fmtPct(((t1 - e) / e) * 100)})` : '—',
+      tp1Display: t1 ? `${fmtRp(t1)} (+${fmtPct(((t1 - avgPrice) / avgPrice) * 100)})` : '—',
       tp1Shares: t1Shares,
-      tp2Display: t2 ? `${fmtRp(t2)} (+${fmtPct(((t2 - e) / e) * 100)})` : '—',
+      tp2Display: t2 ? `${fmtRp(t2)} (+${fmtPct(((t2 - avgPrice) / avgPrice) * 100)})` : '—',
       tp2Shares: t2Shares,
-      tp2Profit: t2 ? (t1Shares * (t1 - e)) + (t2Shares * (t2 - e)) : 0,
+      tp2Profit: t2 ? (t1Shares * (t1 - avgPrice)) + (t2Shares * (t2 - avgPrice)) : 0,
       runnerShares,
     };
 
@@ -168,18 +209,23 @@ export default function SizingCalculator({
         type: 'warning',
         text: warningMsg + `⚠ SL terlalu ketat (${slPercent.toFixed(1)}%). Widen SL or accept noise risk.`,
       });
-    } else if (posValUncapped > maxPosValue) {
+    } else if (calcMode === 'add' && remainingRiskBudget <= 0) {
       setAlertInfo({
         type: 'danger',
-        text: warningMsg + `🚫 Max Position Cap Hit. Sizing scaled down to ${fmt(cappedShares / 100)} lots (${(maxCapPct * 100).toFixed(0)}% Cap).`,
+        text: warningMsg + `🚫 Cannot add. Existing risk (${fmtRp(existingRisk)}) exceeds your risk budget of ${fmtRp(cap * (currentRisk / 100))}. Trail your SL higher first!`,
+      });
+    } else if (posValUncapped > maxAllowedNewPosVal) {
+      setAlertInfo({
+        type: 'danger',
+        text: warningMsg + `🚫 Max Position Cap Hit. Sizing scaled down to ${fmt(cappedShares / 100)} lots (${(maxCapPct * 100).toFixed(0)}% Cap total).`,
       });
     } else {
       setAlertInfo({
         type: warningType,
-        text: warningMsg || `✓ System compliant. Exact risk is ${fmtRp(cappedShares * diff)}.`,
+        text: warningMsg || `✓ System compliant. Total risk is ${fmtRp(totalMaxLoss)}.`,
       });
     }
-  }, [entry, sl, tp1, tp2, customCapital, customRiskPct, maxCapPct, onResultsChange, todaysGate]);
+  }, [entry, sl, tp1, tp2, customCapital, customRiskPct, maxCapPct, onResultsChange, todaysGate, calcMode, existingLots, existingEntry]);
 
   function handleAddToTracker() {
     if (cooldownTimeLeft > 0) {
@@ -208,7 +254,27 @@ export default function SizingCalculator({
 
   return (
     <div className="card">
-      <div className="card-title">Position Sizing Calculator</div>
+      <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>Position Sizing Calculator</span>
+        <div style={{ display: 'flex', gap: '8px', background: 'var(--bg-primary)', padding: '4px', borderRadius: '4px' }}>
+          <button 
+            onClick={() => setCalcMode('new')} 
+            style={{ 
+              background: calcMode === 'new' ? 'var(--surface)' : 'transparent',
+              color: calcMode === 'new' ? 'var(--text-primary)' : 'var(--text-secondary)',
+              border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: 11
+            }}
+          >New Trade</button>
+          <button 
+            onClick={() => setCalcMode('add')} 
+            style={{ 
+              background: calcMode === 'add' ? 'var(--surface)' : 'transparent',
+              color: calcMode === 'add' ? 'var(--text-primary)' : 'var(--text-secondary)',
+              border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: 11
+            }}
+          >Add to Position</button>
+        </div>
+      </div>
 
       <div className="field-row">
         <div className="field">
@@ -245,7 +311,7 @@ export default function SizingCalculator({
           />
         </div>
         <div className="field">
-          <label>Harga Entry (Rp)</label>
+          <label>{calcMode === 'add' ? 'New Add Entry (Rp)' : 'Harga Entry (Rp)'}</label>
           <input
             type="number"
             value={entry}
@@ -255,6 +321,29 @@ export default function SizingCalculator({
           />
         </div>
       </div>
+
+      {calcMode === 'add' && (
+        <div className="field-row" style={{ marginTop: 12, marginBottom: 12, padding: 12, background: 'rgba(var(--accent-rgb), 0.05)', border: '1px solid var(--border)', borderRadius: 4 }}>
+          <div className="field">
+            <label>Existing Lots</label>
+            <input
+              type="number"
+              value={existingLots}
+              onChange={e => setExistingLots(e.target.value)}
+              placeholder="e.g. 50"
+            />
+          </div>
+          <div className="field">
+            <label>Existing Avg Entry (Rp)</label>
+            <input
+              type="number"
+              value={existingEntry}
+              onChange={e => setExistingEntry(e.target.value)}
+              placeholder="e.g. 1000"
+            />
+          </div>
+        </div>
+      )}
 
       <div className="field-row">
         <div className="field">
@@ -321,26 +410,26 @@ export default function SizingCalculator({
         <>
           <div className="result-grid">
             <div className="result-box danger">
-              <div className="result-label">Max Rugi</div>
+              <div className="result-label">Total Max Rugi</div>
               <div className="result-val">{fmtRp(results.maxLoss)}</div>
               <div className="result-sub">
                 {(parseFloat(customRiskPct) || 0).toFixed(2)}% Modal 
               </div>
             </div>
             <div className="result-box success">
-              <div className="result-label">Jumlah Saham</div>
+              <div className="result-label">{calcMode === 'add' ? 'Lots to Add' : 'Jumlah Saham'}</div>
               <div className="result-val">{fmt(results.lots)}</div>
-              <div className="result-sub">Lot (dibulatkan)</div>
+              <div className="result-sub">{calcMode === 'add' ? `Total Pos: ${fmt(results.totalLots)} Lot` : 'Lot (dibulatkan)'}</div>
             </div>
             <div className="result-box">
-              <div className="result-label">Nilai Posisi</div>
+              <div className="result-label">Total Nilai Posisi</div>
               <div className="result-val">{fmtRp(results.posVal)}</div>
               <div className="result-sub">{fmtPct(results.posValPct)} Modal</div>
             </div>
             <div className="result-box">
-              <div className="result-label">R:R Ratio</div>
-              <div className="result-val">{results.rr}</div>
-              <div className="result-sub">Reward vs Risk</div>
+              <div className="result-label">{calcMode === 'add' ? 'New Avg Entry' : 'R:R Ratio'}</div>
+              <div className="result-val">{calcMode === 'add' ? fmtRp(results.avgPrice) : results.rr}</div>
+              <div className="result-sub">{calcMode === 'add' ? 'Avg of existing + new' : 'Reward vs Risk'}</div>
             </div>
           </div>
 
