@@ -329,6 +329,71 @@
   -ms-overflow-style: none;
 }
 
+/* ── Heatmap ─────────────────────────────────────────────── */
+.heatmap-container {
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.heatmap-header {
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.heatmap-wrapper {
+  position: relative;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.heatmap-months {
+  position: relative;
+  height: 14px;
+  margin-bottom: 4px;
+}
+.heatmap-months span {
+  position: absolute;
+  font-size: 9px;
+  color: var(--text-secondary);
+}
+.heatmap-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.heatmap-row {
+  display: flex;
+  gap: 3px;
+}
+.heatmap-cell {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.heatmap-cell:hover:not(.future) {
+  border-color: var(--text-primary);
+  transform: scale(1.2);
+}
+.heatmap-cell.active {
+  background: var(--success);
+  border-color: var(--success);
+}
+.heatmap-cell.today {
+  border: 1px solid var(--accent);
+}
+.heatmap-cell.future {
+  opacity: 0.2;
+  cursor: default;
+}
+
 .dd-slider::-webkit-scrollbar {
   display: none;
 }

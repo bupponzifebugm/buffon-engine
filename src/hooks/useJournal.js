@@ -28,14 +28,14 @@ export function useJournal(user) {
     setLoading(false);
   }
 
-  async function createNote() {
+  async function createNote(initialData = {}) {
     if (!user) return;
     const { data, error } = await supabase
       .from('journal_entries')
       .insert({
         user_id: user.id,
-        title: '',
-        content: '',
+        title: initialData.title || '',
+        content: initialData.content || '',
       })
       .select()
       .single();

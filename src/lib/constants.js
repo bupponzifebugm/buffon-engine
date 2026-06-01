@@ -429,6 +429,28 @@ export const JOURNAL_TEMPLATES = [
 <p>Focus score: /10. <em>(Remember: IDR determines max risk today).</em></p>`
   },
   {
+    label: 'Deep Dive / Reflection',
+    content: `<h1>Deep Dive: \${date}</h1>
+<h2>1. What went well?</h2>
+<p></p>
+<h2>2. Where did I leak edge?</h2>
+<p></p>
+<h2>3. Action plan for tomorrow</h2>
+<p></p>`
+  },
+  {
+    label: 'Daily End-of-Day Checklist',
+    content: `<h1>Daily Checklist: \${date}</h1>
+<h2>1. System Compliance</h2>
+<ul><li>[ ] Did I follow the Daily Sizing Risk rule?</li><li>[ ] Did I respect the Morning Gate focus score?</li><li>[ ] Did I cut losses exactly at SL?</li></ul>
+<h2>2. Psychological Review</h2>
+<p>Did I feel FOMO, Revenge Trading, or Hesitation today? Explain.</p>
+<h2>3. Biggest Mistake</h2>
+<p>If any, what was my biggest mistake today? (Ensure it is logged in the Mistake Log).</p>
+<h2>4. Tomorrow's Focus</h2>
+<p>1 thing to improve tomorrow:</p>`
+  },
+  {
     label: 'Post-Market Review',
     content: `<h1>Post-Market Review: \${date}</h1>
 <h2>1. Daily Stats</h2>

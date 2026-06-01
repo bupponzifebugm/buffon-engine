@@ -5,6 +5,7 @@ import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 import { JOURNAL_TEMPLATES } from '../../lib/constants';
+import JournalHeatmap from './JournalHeatmap';
 
 export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, onUpdateNote, onDeleteNote, onUploadImage }) {
   const [saveStatus, setSaveStatus] = useState('');
@@ -169,11 +170,38 @@ export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, o
     }
   };
 
+  const handleDateClick = (dateStr) => {
+    const existingNote = notes.find(n => {
+      const d = new Date(n.created_at || n.id);
+      const nDateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      return nDateStr === dateStr;
+    });
+
+    if (existingNote) {
+      onOpenNote(existingNote.id);
+    } else {
+      const template = JOURNAL_TEMPLATES.find(t => t.label === 'Daily End-of-Day Checklist');
+      let initialContent = '';
+      if (template) {
+        const displayDate = new Date(dateStr).toLocaleDateString('id-ID', {
+          day: 'numeric', month: 'long', year: 'numeric'
+        });
+        initialContent = template.content.replace('${date}', displayDate);
+      }
+      onCreateNote({
+        title: `Daily Checklist - ${dateStr}`,
+        content: initialContent
+      });
+    }
+  };
+
   return (
     <div className="journal-layout">
       {/* Sidebar */}
       <div className="journal-sidebar">
-        <button className="btn" onClick={onCreateNote} style={{ margin: 0, padding: 10 }}>
+        <JournalHeatmap notes={notes} onDateClick={handleDateClick} />
+
+        <button className="btn" onClick={() => onCreateNote({})} style={{ margin: 0, padding: 10 }}>
           <Plus size={14} /> New Journal Entry
         </button>
         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginTop: 12, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
