@@ -1,7 +1,8 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { fmtRp, fmtPct, getWeekStartString } from '../../lib/utils';
 import { EMOTIONS, RANKS, getRankFromRR, getNextRank, ACHIEVEMENTS, RR_RULES } from '../../lib/constants';
-import { ChevronLeft, ChevronRight, TrendingUp, Award, Download, Trophy, Shield, Target, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, Award, Download, Trophy, Shield, Target, Star, PieChart as PieChartIcon } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 function formatCompactRp(val) {
   if (val === 0) return 'Rp 0';
@@ -121,50 +122,23 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
     return [...positions].reverse();
   }, [positions]);
 
-  const chartPoints = useMemo(() => {
+  const rechartsData = useMemo(() => {
     let current = 0;
-    const pts = [0];
+    const pts = [{ date: 'Start', val: 0, ticker: '' }];
     sortedPositions.forEach(p => {
-      current += (p.pnl || 0);
-      pts.push(current);
+      if (p.status !== 'open') {
+        current += (p.pnl || 0);
+        pts.push({
+          date: p.trade_date,
+          ticker: p.ticker,
+          val: current
+        });
+      }
     });
     return pts;
   }, [sortedPositions]);
 
-  const chartDetails = useMemo(() => {
-    const w = 600;
-    const h = 180;
-    const pad = 20;
-
-    const maxVal = Math.max(...chartPoints, 100_000);
-    const minVal = Math.min(...chartPoints, -100_000);
-    const range = maxVal - minVal || 1;
-
-    const linePoints = chartPoints.map((val, idx) => {
-      const x = pad + (idx / (chartPoints.length - 1 || 1)) * (w - 2 * pad);
-      const y = h - pad - ((val - minVal) / range) * (h - 2 * pad);
-      return { x, y, val };
-    });
-
-    const zeroY = h - pad - ((0 - minVal) / range) * (h - 2 * pad);
-
-    const pathD = linePoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
-    
-    // Close the area path down to the zeroY line
-    const areaD = linePoints.length > 0
-      ? `M ${linePoints[0].x.toFixed(1)} ${zeroY.toFixed(1)} L ${linePoints.map(p => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' L ')} L ${linePoints[linePoints.length - 1].x.toFixed(1)} ${zeroY.toFixed(1)} Z`
-      : '';
-
-    return {
-      width: w,
-      height: h,
-      pathD,
-      areaD,
-      zeroY,
-      netProfit: chartPoints[chartPoints.length - 1] || 0,
-      points: linePoints
-    };
-  }, [chartPoints]);
+  const finalCumulativePnl = rechartsData[rechartsData.length - 1]?.val || 0;
 
   // Upgrade Runway Stats
   const runwayStats = useMemo(() => {
@@ -255,8 +229,6 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
 
     return { totalR, avgRWin, avgRLoss, expectancy, count: rWins.length + rLosses.length };
   }, [positions]);
-
-  const finalCumulativePnl = chartDetails.netProfit;
 
   // ── RANK RATING SYSTEM ──
   const rankData = useMemo(() => {
@@ -751,66 +723,25 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
           </div>
 
           <div style={{ flex: 1, position: 'relative', background: 'var(--bg-primary)', borderRadius: 6, border: '1px solid var(--border)', overflow: 'hidden', padding: 8 }}>
-            <svg 
-              viewBox={`0 0 ${chartDetails.width} ${chartDetails.height}`} 
-              style={{ width: '100%', height: 'auto', display: 'block' }}
-            >
-              <defs>
-                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={finalCumulativePnl >= 0 ? 'var(--success)' : 'var(--danger)'} stopOpacity="0.18" />
-                  <stop offset="100%" stopColor={finalCumulativePnl >= 0 ? 'var(--success)' : 'var(--danger)'} stopOpacity="0.00" />
-                </linearGradient>
-              </defs>
-
-              {/* Zero-Reference Line */}
-              <line 
-                x1="20" y1={chartDetails.zeroY} 
-                x2="580" y2={chartDetails.zeroY} 
-                stroke="var(--border-strong)" 
-                strokeWidth="1.2" 
-                strokeDasharray="4 4" 
-              />
-              <text 
-                x="24" y={chartDetails.zeroY - 4} 
-                fill="var(--text-secondary)" 
-                fontSize="9" 
-                fontWeight="700" 
-                opacity="0.6"
-              >
-                BE Reference
-              </text>
-
-              {/* Filled Area Gradient */}
-              {chartDetails.areaD && (
-                <path d={chartDetails.areaD} fill="url(#areaGrad)" />
-              )}
-
-              {/* Solid Curve Line */}
-              {chartDetails.pathD && (
-                <path 
-                  d={chartDetails.pathD} 
-                  fill="none" 
-                  stroke={finalCumulativePnl >= 0 ? 'var(--success)' : 'var(--danger)'} 
-                  strokeWidth="2.5" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={rechartsData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorPnL" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={finalCumulativePnl >= 0 ? 'var(--success)' : 'var(--danger)'} stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={finalCumulativePnl >= 0 ? 'var(--success)' : 'var(--danger)'} stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="date" hide />
+                <YAxis hide domain={['dataMin', 'dataMax']} />
+                <RechartsTooltip 
+                  formatter={(value) => [fmtRp(value), 'Net PnL']}
+                  labelFormatter={(label) => `Date: ${label}`}
+                  labelStyle={{ color: 'var(--text-primary)', fontWeight: 'bold' }}
+                  contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 6 }}
                 />
-              )}
-
-              {/* Node Circles */}
-              {chartDetails.points.map((p, i) => (
-                <circle 
-                  key={i} 
-                  cx={p.x} 
-                  cy={p.y} 
-                  r={chartDetails.points.length > 30 ? '1.5' : '3'} 
-                  fill={p.val >= 0 ? 'var(--success)' : 'var(--danger)'} 
-                  stroke="var(--bg-primary)" 
-                  strokeWidth="1" 
-                  opacity="0.9"
-                />
-              ))}
-            </svg>
+                <Area type="monotone" dataKey="val" stroke={finalCumulativePnl >= 0 ? 'var(--success)' : 'var(--danger)'} strokeWidth={3} fillOpacity={1} fill="url(#colorPnL)" />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
@@ -1070,40 +1001,57 @@ export default function AnalyticsDashboard({ positions, cleanStreak = 0, current
           </div>
         </div>
 
-        {/* Emotion Analytics */}
+        {/* Emotion Analytics Pie Chart */}
         <div className="card">
-          <div className="card-title">Emotion PnL Analytics</div>
+          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <PieChartIcon size={16} style={{ color: 'var(--accent)' }} />
+            Emotion PnL Breakdown
+          </div>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
             The "Mirror". How your feelings affect your wallet.
           </p>
-          
-          <table className="system-table">
-            <thead>
-              <tr>
-                <th>Emotion</th>
-                <th>Trades</th>
-                <th>Total PnL</th>
-              </tr>
-            </thead>
-            <tbody>
-              {emotionStats.length === 0 && (
-                <tr><td colSpan="3" style={{ textAlign: 'center' }}>No emotion data yet.</td></tr>
-              )}
-              {emotionStats.map(stat => (
-                <tr key={stat.label}>
-                  <td>
-                    <span className={`emotion-tag active ${stat.color}`} style={{ display: 'inline-block', padding: '3px 8px', fontSize: 11 }}>
-                      {stat.label}
-                    </span>
-                  </td>
-                  <td>{stat.count}</td>
-                  <td style={{ color: stat.pnl > 0 ? 'var(--success)' : stat.pnl < 0 ? 'var(--danger)' : 'var(--text-primary)', fontWeight: 700 }}>
-                    {stat.pnl > 0 ? '+' : ''}{fmtRp(stat.pnl)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+            {emotionStats.length === 0 ? (
+              <div style={{ flex: 1, padding: '32px 0', textAlign: 'center', color: 'var(--text-secondary)', fontSize: 13 }}>
+                No emotion data logged yet.
+              </div>
+            ) : (
+              <div style={{ width: '100%', height: 260 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={emotionStats}
+                      dataKey="count"
+                      nameKey="label"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                    >
+                      {emotionStats.map((entry, index) => {
+                        // Map predefined colors to actual CSS variables
+                        let colorHex = 'var(--accent)';
+                        if (entry.color === 'calm') colorHex = 'var(--success)';
+                        if (entry.color === 'fomo') colorHex = 'var(--danger)';
+                        if (entry.color === 'revenge') colorHex = 'var(--danger)';
+                        if (entry.color === 'confident') colorHex = 'var(--purple)';
+                        if (entry.color === 'hesitant') colorHex = 'var(--text-secondary)';
+                        if (entry.color === 'greedy') colorHex = 'var(--warning)';
+                        return <Cell key={`cell-${index}`} fill={colorHex} />;
+                      })}
+                    </Pie>
+                    <RechartsTooltip 
+                      formatter={(value, name, props) => [`${value} trades (${fmtRp(props.payload.pnl)})`, name]}
+                      contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 6 }}
+                      itemStyle={{ color: 'var(--text-primary)' }}
+                    />
+                    <Legend verticalAlign="bottom" height={36}/>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="card" style={{ border: violationStats.count > 0 ? '1px solid var(--danger)' : '' }}>

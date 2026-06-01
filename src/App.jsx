@@ -29,6 +29,7 @@ import MindsetPanel from './components/Mindset/MindsetPanel';
 import Journal from './components/Journal/Journal';
 import DailyQuote from './components/Quotes/DailyQuote';
 import AnalyticsDashboard from './components/Dashboard/AnalyticsDashboard';
+import PlaybookCanvas from './components/Playbook/PlaybookCanvas';
 import ConfidentLog from './components/Confident/ConfidentLog';
 import TradingCoach from './components/Chat/TradingCoach';
 
@@ -307,6 +308,11 @@ function App() {
             gamificationState={profile?.gamification_state}
             updateGamificationState={updateGamificationState}
           />
+        </div>
+
+        {/* === CHART PLAYBOOK TAB === */}
+        <div className={`tab-content${activeTab === 'tab-playbook' ? ' active' : ''}`} style={{ padding: 0 }}>
+          {activeTab === 'tab-playbook' && <PlaybookCanvas />}
         </div>
 
         {/* === RISK & DRAWDOWN TAB === */}
