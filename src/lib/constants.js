@@ -81,6 +81,7 @@ export const DAILY_QUOTES = [
   { text: "If you cannot control your emotions, you cannot control your money.", author: "Warren Buffett" },
   { text: "Victorious warriors win first and then go to war, while defeated warriors go to war first and then seek to win.", author: "Sun Tzu" },
   { text: "Every trade is just one out of a thousand. It has no special meaning. Execute the system.", author: "Mark Douglas" },
+  { text: "FOMO is the enemy. Wait for the price to return to your entry zone. If it leaves without you, let it go.", author: "Buffon's Trading Psychology Rule #10" },
   { text: "The most important rule of trading is to play great defense, not great offense.", author: "Paul Tudor Jones" },
   { text: "Losses are the tuition you pay for learning how to trade. Don't pay tuition twice for the same lesson.", author: "Trading Proverb" },
   { text: "You don't stop when you're tired. You stop when you're done. Protect the streak.", author: "David Goggins" },
@@ -124,6 +125,7 @@ export const MISTAKE_TYPES = [
   'Choosing wrong ticker in right sector',
   'Mixing Ajaib invest with Stockbit scalp',
   'Comparing to others / FOMO entries',
+  'Chasing price instead of waiting for entry zone',
   'Not moving SL to breakeven after TP1',
 ];
 
@@ -274,6 +276,7 @@ export const MISTAKE_SOLUTIONS = {
   'Choosing wrong ticker in right sector': 'Check broker summary for AK/CC accumulation to confirm the leader.',
   'Mixing Ajaib invest with Stockbit scalp': 'Stockbit = Intraday. Ajaib = Invest. Separate worlds. Do not mix them.',
   'Comparing to others / FOMO entries': 'Their timeline is not yours. Delete social media during trading hours.',
+  'Chasing price instead of waiting for entry zone': 'Patience pays. If it leaves without you, there will be another setup. Never enter aggressively far from your zone.',
   'Not moving SL to breakeven after TP1': 'Once 40% is sold at TP1, SL moves to breakeven immediately.',
   // Specific entries from notebook
   'Hesitate and miss entry': 'Pre-set a limit order before the level hits.',
