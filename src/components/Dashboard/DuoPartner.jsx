@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react';
 import { DUO_DIALOGUES } from '../../lib/constants';
 import { Sparkles } from 'lucide-react';
 
-import baddieNeutral from '../../assets/baddie_neutral.jpg';
-import baddieHappy from '../../assets/baddie_happy.png';
-import baddieDisappointed from '../../assets/baddie_disappointed.png';
-import baddieToxic from '../../assets/baddie_toxic.png';
+import nailongNeutral from '../../assets/nailong_neutral.png';
+import nailongHappy from '../../assets/nailong_happy.png';
+import nailongDisappointed from '../../assets/nailong_disappointed.png';
+import nailongToxic from '../../assets/nailong_toxic.png';
 
 const IMAGE_MAP = {
-  neutral: baddieNeutral,
-  happy: baddieHappy,
-  disappointed: baddieDisappointed,
-  toxic: baddieToxic
+  neutral: nailongNeutral,
+  happy: nailongHappy,
+  disappointed: nailongDisappointed,
+  toxic: nailongToxic
 };
 
 export default function DuoPartner({ positions, gamificationState, cooldownTimeLeft, ugmStatus }) {
@@ -117,7 +117,7 @@ export default function DuoPartner({ positions, gamificationState, cooldownTimeL
       }}>
         <img 
           src={IMAGE_MAP[imageState]} 
-          alt="Baddie Companion" 
+          alt="Nailong Companion" 
           style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
         />
       </div>
