@@ -1,8 +1,13 @@
+import { useState } from 'react';
 import { fmtRp, fmt, fmtDate } from '../../lib/utils';
 import { STATUS_CONFIG } from '../../lib/constants';
-import { Trash2, ShieldAlert, Edit2 } from 'lucide-react';
+import { Edit2, Trash2, ShieldAlert, Camera } from 'lucide-react';
+import TradingCard from '../Cards/TradingCard';
 
 export default function PositionsTable({ positions, onEditPosition, onDeletePosition, onClearPositions }) {
+  const [showMintModal, setShowMintModal] = useState(false);
+  const [selectedMintTrade, setSelectedMintTrade] = useState(null);
+
   if (!positions.length) {
     return (
       <div className="card" style={{ marginTop: 0 }}>
@@ -134,6 +139,11 @@ export default function PositionsTable({ positions, onEditPosition, onDeletePosi
                     <td style={{ color: pnlColor, fontWeight: 700 }}>{pnlText}</td>
                     <td style={{ color: rColor, fontWeight: 700, fontSize: 13, fontFamily: 'var(--font-mono)' }}>{rText}</td>
                     <td>
+                      {p.status !== 'open' && (
+                        <button className="btn-small" onClick={() => { setSelectedMintTrade(p); setShowMintModal(true); }} style={{ marginRight: 8 }} title="Mint Trading Card">
+                          <Camera size={12} />
+                        </button>
+                      )}
                       <button className="btn-small" onClick={() => onEditPosition(p)} style={{ marginRight: 8 }}>
                         <Edit2 size={12} />
                       </button>
@@ -148,6 +158,20 @@ export default function PositionsTable({ positions, onEditPosition, onDeletePosi
           </table>
         </div>
       </div>
+
+      {showMintModal && selectedMintTrade && (
+        <div className="modal-overlay" onClick={() => setShowMintModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 350, display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'var(--bg-primary)' }}>
+            <h3 style={{ marginBottom: 16 }}>Mint Trading Card</h3>
+            <TradingCard trade={selectedMintTrade} />
+            <div style={{ marginTop: 24, width: '100%', display: 'flex', justifyContent: 'center' }}>
+              <button className="btn secondary" onClick={() => setShowMintModal(false)} style={{ width: '100%' }}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

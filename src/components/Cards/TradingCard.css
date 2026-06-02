@@ -1,0 +1,148 @@
+.trading-card-container {
+  width: 280px;
+  height: 400px;
+  border-radius: 16px;
+  background: var(--bg-secondary);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  font-family: var(--font-sans);
+  border: 1px solid var(--border);
+}
+
+.card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.6;
+}
+
+/* Fame Card Styles */
+.fame {
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  border: 2px solid #fbbf24;
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.3), inset 0 0 20px rgba(251, 191, 36, 0.1);
+}
+
+.fame-overlay {
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.2) 25%,
+    rgba(255, 255, 255, 0.5) 30%,
+    transparent 35%
+  );
+  background-size: 200% 200%;
+  animation: holo 6s infinite linear;
+}
+
+/* Shame Card Styles */
+.shame {
+  background: linear-gradient(135deg, #3f1d1d, #1a0808);
+  border: 2px solid #ef4444;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+.shame-overlay {
+  background: radial-gradient(circle at center, transparent, rgba(239, 68, 68, 0.15) 80%);
+}
+
+/* Keyframes */
+@keyframes holo {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Content Styles */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+  z-index: 2;
+}
+
+.card-ticker {
+  font-size: 24px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+.card-date {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: var(--font-mono);
+}
+
+.card-art {
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 2;
+}
+
+.art-icon {
+  font-size: 32px;
+  font-weight: 900;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+.fame-icon { color: #fbbf24; }
+.shame-icon { color: #ef4444; }
+.standard-icon { color: #94a3b8; }
+
+.card-stats {
+  padding: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 2;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-size: 14px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  color: #fff;
+}
+
+.stat-value.success { color: #34d399; }
+.stat-value.danger { color: #f87171; }
+.stat-value.capitalize { text-transform: capitalize; }
+
+.card-flavor {
+  padding: 16px;
+  font-size: 11px;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 2;
+}
