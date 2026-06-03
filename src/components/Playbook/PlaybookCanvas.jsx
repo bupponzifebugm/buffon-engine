@@ -11,8 +11,8 @@ export default function PlaybookCanvas() {
         </span>
       </div>
       <div style={{ flex: 1, position: 'relative' }}>
-        <div style={{ position: 'absolute', inset: 0 }}>
-          <Tldraw persistenceKey="buffon-playbook-canvas" />
+        <div style={{ position: 'absolute', inset: 0, touchAction: 'none' }}>
+          <Tldraw persistenceKey="buffon-playbook-canvas" autoFocus />
         </div>
       </div>
     </div>
