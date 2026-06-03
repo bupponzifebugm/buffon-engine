@@ -10,10 +10,8 @@ export default function PlaybookCanvas() {
           (Drawings are auto-saved locally to your browser)
         </span>
       </div>
-      <div style={{ flex: 1, position: 'relative' }}>
-        <div style={{ position: 'absolute', inset: 0, touchAction: 'none' }}>
-          <Tldraw persistenceKey="buffon-playbook-canvas" autoFocus />
-        </div>
+      <div style={{ width: '100%', height: '100%', minHeight: '600px', position: 'relative' }}>
+        <Tldraw />
       </div>
     </div>
   );
