@@ -1,5 +1,4 @@
-import { Tldraw } from 'tldraw';
-import 'tldraw/tldraw.css';
+import { Excalidraw } from "@excalidraw/excalidraw";
 
 export default function PlaybookCanvas() {
   return (
@@ -7,11 +6,11 @@ export default function PlaybookCanvas() {
       <div className="card-title" style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
         Chart Playbook Canvas
         <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 'normal', marginLeft: 12 }}>
-          (Drawings are auto-saved locally to your browser)
+          (Powered by Excalidraw — Auto-saved locally)
         </span>
       </div>
-      <div style={{ width: '100%', height: '100%', minHeight: '600px', position: 'relative' }}>
-        <Tldraw />
+      <div style={{ flex: 1, position: 'relative', width: '100%', height: '100%', minHeight: '600px' }}>
+        <Excalidraw theme="dark" />
       </div>
     </div>
   );
