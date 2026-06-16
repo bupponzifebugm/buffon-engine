@@ -44,7 +44,7 @@ function App() {
   const { todaysGate, isGateCompleted, submitGate, loading: gateLoading } = useMorningGate(user);
   const { notes, activeNote, createNote, openNote, updateNote, deleteNote, uploadImage } = useJournal(user);
   const { mistakes, addMistake, deleteMistake, totalTuition, mostCommonMistake } = useMistakes(user);
-  const { receipts: confidentReceipts, addReceipt: addConfidentReceipt, deleteReceipt: deleteConfidentReceipt } = useConfidentReceipts(user);
+  const { receipts: confidentReceipts, addReceipt: addConfidentReceipt, deleteReceipt: deleteConfidentReceipt, updateReceipt: updateConfidentReceipt } = useConfidentReceipts(user);
 
   const [activeTab, setActiveTab] = useState('tab-execute');
   const [isDark, setIsDark] = useState(() => {
@@ -212,6 +212,10 @@ function App() {
     await deleteConfidentReceipt(id);
   }
 
+  async function handleUpdateConfidentReceipt(id, updates) {
+    await updateConfidentReceipt(id, updates);
+  }
+
   // Auth loading screen
   if (authLoading) {
     return (
@@ -351,6 +355,7 @@ function App() {
             receipts={confidentReceipts}
             onAddReceipt={handleAddConfidentReceipt}
             onDeleteReceipt={handleDeleteConfidentReceipt}
+            onUpdateReceipt={handleUpdateConfidentReceipt}
             onUploadImage={uploadImage}
           />
         </div>

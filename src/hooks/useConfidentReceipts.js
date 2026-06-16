@@ -55,10 +55,24 @@ export function useConfidentReceipts(user) {
     }
   }
 
+  async function updateReceipt(id, updates) {
+    const { data, error } = await supabase
+      .from('confident_receipts')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (!error && data) {
+      setReceipts(prev => prev.map(r => r.id === id ? data : r));
+    }
+  }
+
   return {
     receipts,
     loading,
     addReceipt,
     deleteReceipt,
+    updateReceipt,
   };
 }
