@@ -195,10 +195,39 @@ export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, o
     }
   };
 
+  const localTodayStr = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`;
+  const todayNote = notes.find(n => {
+     const d = new Date(n.created_at || n.id);
+     const nDateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+     return nDateStr === localTodayStr;
+  });
+
   return (
     <div className="journal-layout">
       {/* Sidebar */}
       <div className="journal-sidebar">
+        
+        {/* EXTERNAL JOURNAL CHECKLIST */}
+        <div className="card" style={{ marginBottom: 16, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, background: todayNote ? 'var(--success-bg)' : 'var(--bg-secondary)', border: todayNote ? '1px solid var(--success)' : '1px solid var(--border)', transition: 'all 0.2s' }}>
+          <input 
+            type="checkbox" 
+            checked={!!todayNote} 
+            onChange={(e) => {
+               if (e.target.checked) {
+                  onCreateNote({ title: 'Journaled externally (Notion) ✅', content: '[{"type":"paragraph","content":[{"type":"text","text":"I completed my journal in Notion today."}]}]' });
+               } else {
+                  if (confirm('Unmark today as journaled?')) {
+                     onDeleteNote(todayNote.id);
+                  }
+               }
+            }}
+            style={{ width: 18, height: 18, cursor: 'pointer', accentColor: 'var(--success)' }}
+          />
+          <div style={{ fontSize: 13, color: todayNote ? 'var(--success)' : 'var(--text-primary)', fontWeight: todayNote ? 'bold' : 'normal', userSelect: 'none' }}>
+             {todayNote ? "Journaled Today! 🎯" : "Did you journal in Notion today?"}
+          </div>
+        </div>
+
         <JournalHeatmap notes={notes} onDateClick={handleDateClick} />
 
         <button className="btn" onClick={() => onCreateNote({})} style={{ margin: 0, padding: 10 }}>
