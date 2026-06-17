@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, X, Settings, Send, Brain, Key, Clock, Plus } from 'lucide-react';
+import { MessageSquare, X, Settings, Send, Brain, Key, Clock, Plus, ThumbsUp, ThumbsDown } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { COACH_SYSTEM_PROMPT } from '../../lib/coachPrompt';
 import './TradingCoach.css';
@@ -161,6 +161,27 @@ ${recent || 'No recent trades logged.'}
 `;
   };
 
+  const handleFeedback = (msg, type) => {
+    // Save to localStorage for dataset collection
+    const saved = localStorage.getItem('buffon_ai_feedback');
+    const history = saved ? JSON.parse(saved) : [];
+    
+    const msgIndex = messages.indexOf(msg);
+    const contextMsg = messages[msgIndex - 1]?.content || '';
+
+    history.push({
+      timestamp: new Date().toISOString(),
+      user_input: contextMsg,
+      ai_response: msg.content,
+      ai_think: msg.think || null,
+      rating: type
+    });
+    
+    localStorage.setItem('buffon_ai_feedback', JSON.stringify(history));
+
+    setMessages(prev => prev.map(m => m === msg ? { ...m, rating: type } : m));
+  };
+
   const handleSend = async () => {
     if (!input.trim() || !apiKey) return;
 
@@ -186,7 +207,10 @@ CRITICAL INSTRUCTION: Always append a JSON block at the very end of your respons
 `;
     const fullSystemInstruction = INTERNAL_PREAMBLE + COACH_SYSTEM_PROMPT + '\n\n' + constructDynamicContext();
 
-    const apiMessages = updatedMessages.map(m => ({
+    // Windowing: Only send the last 30 messages to avoid context bloat
+    const windowedMessages = updatedMessages.slice(-30);
+
+    const apiMessages = windowedMessages.map(m => ({
       role: m.role === 'model' ? 'model' : 'user',
       parts: [{ text: m.content }]
     }));
@@ -222,16 +246,24 @@ CRITICAL INSTRUCTION: Always append a JSON block at the very end of your respons
         
         let cleanReply = botReplyRaw;
         let extractedSuggestions = [];
+        let extractedThink = null;
         
+        // Extract Think Block
+        const thinkMatch = botReplyRaw.match(/<think>\s*([\s\S]*?)\s*<\/think>/);
+        if (thinkMatch) {
+           extractedThink = thinkMatch[1].trim();
+           cleanReply = cleanReply.replace(thinkMatch[0], '').trim();
+        }
+
         // Extract JSON block for chips
-        const jsonMatch = botReplyRaw.match(/```json\s*(\{[\s\S]*?\})\s*```/);
+        const jsonMatch = cleanReply.match(/```json\s*(\{[\s\S]*?\})\s*```/);
         if (jsonMatch) {
           try {
             const parsed = JSON.parse(jsonMatch[1]);
             if (parsed.suggested_actions && Array.isArray(parsed.suggested_actions)) {
               extractedSuggestions = parsed.suggested_actions;
             }
-            cleanReply = botReplyRaw.replace(jsonMatch[0], '').trim();
+            cleanReply = cleanReply.replace(jsonMatch[0], '').trim();
           } catch(e) {
             console.error("Failed to parse JSON suggestions", e);
           }
@@ -241,7 +273,7 @@ CRITICAL INSTRUCTION: Always append a JSON block at the very end of your respons
           setDynamicChips(extractedSuggestions);
         }
 
-        const finalMessages = [...updatedMessages, { role: 'model', content: cleanReply }];
+        const finalMessages = [...updatedMessages, { role: 'model', content: cleanReply, think: extractedThink }];
         setMessages(finalMessages);
 
         // Update Conversations DB
@@ -394,9 +426,36 @@ CRITICAL INSTRUCTION: Always append a JSON block at the very end of your respons
               {messages.map((msg, idx) => (
                 <div key={idx} className={`ai-message ${msg.role}`}>
                   <div className="ai-message-content">
+                    {msg.think && (
+                      <details className="ai-thought-process" style={{ marginBottom: 8, fontSize: 11, background: 'var(--bg-primary)', padding: 8, borderRadius: 4, cursor: 'pointer' }}>
+                        <summary style={{ color: 'var(--text-secondary)', userSelect: 'none' }}>🧠 AI Thought Process</summary>
+                        <div style={{ marginTop: 8, color: 'var(--text-secondary)' }}>
+                           <ReactMarkdown className="markdown-wrapper">{msg.think}</ReactMarkdown>
+                        </div>
+                      </details>
+                    )}
                     <ReactMarkdown className="markdown-wrapper">
                       {msg.content}
                     </ReactMarkdown>
+
+                    {msg.role === 'model' && msg.content && !msg.content.startsWith('API Error') && (
+                      <div className="ai-message-feedback" style={{ display: 'flex', gap: 12, marginTop: 12, justifyContent: 'flex-end' }}>
+                         <button 
+                           onClick={() => handleFeedback(msg, 'up')}
+                           style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: msg.rating === 'up' ? 'var(--success)' : 'var(--text-secondary)', transition: 'color 0.2s' }}
+                           title="Good response"
+                         >
+                           <ThumbsUp size={14} />
+                         </button>
+                         <button 
+                           onClick={() => handleFeedback(msg, 'down')}
+                           style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: msg.rating === 'down' ? 'var(--danger)' : 'var(--text-secondary)', transition: 'color 0.2s' }}
+                           title="Bad response"
+                         >
+                           <ThumbsDown size={14} />
+                         </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
