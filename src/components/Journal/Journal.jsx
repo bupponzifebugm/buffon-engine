@@ -151,6 +151,11 @@ export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, o
 
   // Filter notes based on search query
   const filteredNotes = notes.filter(note => {
+    // Hide dummy Notion notes from the visible list
+    if (note.title === 'Journaled externally (Notion) ✅') {
+      return false;
+    }
+
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     const titleMatch = (note.title || '').toLowerCase().includes(q);
@@ -171,10 +176,11 @@ export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, o
   };
 
   const handleDateClick = (dateStr) => {
+    // Ignore dummy notes when clicking a date
     const existingNote = notes.find(n => {
       const d = new Date(n.created_at || n.id);
       const nDateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      return nDateStr === dateStr;
+      return nDateStr === dateStr && n.title !== 'Journaled externally (Notion) ✅';
     });
 
     if (existingNote) {
@@ -196,10 +202,11 @@ export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, o
   };
 
   const localTodayStr = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`;
-  const todayNote = notes.find(n => {
+  // Only look for the specific dummy note for the checkbox state
+  const todayNotionNote = notes.find(n => {
      const d = new Date(n.created_at || n.id);
      const nDateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-     return nDateStr === localTodayStr;
+     return nDateStr === localTodayStr && n.title === 'Journaled externally (Notion) ✅';
   });
 
   return (
@@ -208,23 +215,23 @@ export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, o
       <div className="journal-sidebar">
         
         {/* EXTERNAL JOURNAL CHECKLIST */}
-        <div className="card" style={{ marginBottom: 16, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, background: todayNote ? 'var(--success-bg)' : 'var(--bg-secondary)', border: todayNote ? '1px solid var(--success)' : '1px solid var(--border)', transition: 'all 0.2s' }}>
+        <div className="card" style={{ marginBottom: 16, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, background: todayNotionNote ? 'var(--success-bg)' : 'var(--bg-secondary)', border: todayNotionNote ? '1px solid var(--success)' : '1px solid var(--border)', transition: 'all 0.2s' }}>
           <input 
             type="checkbox" 
-            checked={!!todayNote} 
+            checked={!!todayNotionNote} 
             onChange={(e) => {
                if (e.target.checked) {
                   onCreateNote({ title: 'Journaled externally (Notion) ✅', content: '[{"type":"paragraph","content":[{"type":"text","text":"I completed my journal in Notion today."}]}]' });
                } else {
                   if (confirm('Unmark today as journaled?')) {
-                     onDeleteNote(todayNote.id);
+                     onDeleteNote(todayNotionNote.id);
                   }
                }
             }}
             style={{ width: 18, height: 18, cursor: 'pointer', accentColor: 'var(--success)' }}
           />
-          <div style={{ fontSize: 13, color: todayNote ? 'var(--success)' : 'var(--text-primary)', fontWeight: todayNote ? 'bold' : 'normal', userSelect: 'none' }}>
-             {todayNote ? "Journaled Today! 🎯" : "Did you journal in Notion today?"}
+          <div style={{ fontSize: 13, color: todayNotionNote ? 'var(--success)' : 'var(--text-primary)', fontWeight: todayNotionNote ? 'bold' : 'normal', userSelect: 'none' }}>
+             {todayNotionNote ? "Journaled Today! 🎯" : "Did you journal in Notion today?"}
           </div>
         </div>
 
