@@ -37,6 +37,7 @@ export function useMistakes(user) {
         tuition_loss: m.tuition_loss,
         notes: m.notes,
         action_plan: m.action_plan,
+        image_url: m.image_url,
       })
       .select()
       .single();
@@ -54,6 +55,19 @@ export function useMistakes(user) {
 
     if (!error) {
       setMistakes(prev => prev.filter(m => m.id !== id));
+    }
+  }
+
+  async function updateMistake(id, updates) {
+    const { data, error } = await supabase
+      .from('mistake_receipts')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (!error && data) {
+      setMistakes(prev => prev.map(m => m.id === id ? data : m));
     }
   }
 
@@ -76,6 +90,7 @@ export function useMistakes(user) {
     loading,
     addMistake,
     deleteMistake,
+    updateMistake,
     totalTuition,
     mostCommonMistake,
   };

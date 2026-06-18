@@ -43,7 +43,7 @@ function App() {
   const { challengeData, cleanStreak, currentTierKey, updateTrade, loading: challengeLoading } = useChallenge(user);
   const { todaysGate, isGateCompleted, submitGate, loading: gateLoading } = useMorningGate(user);
   const { notes, activeNote, createNote, openNote, updateNote, deleteNote, uploadImage } = useJournal(user);
-  const { mistakes, addMistake, deleteMistake, totalTuition, mostCommonMistake } = useMistakes(user);
+  const { mistakes, addMistake, deleteMistake, updateMistake, totalTuition, mostCommonMistake } = useMistakes(user);
   const { receipts: confidentReceipts, addReceipt: addConfidentReceipt, deleteReceipt: deleteConfidentReceipt, updateReceipt: updateConfidentReceipt } = useConfidentReceipts(user);
 
   const [activeTab, setActiveTab] = useState('tab-execute');
@@ -204,6 +204,10 @@ function App() {
     await deleteMistake(id);
   }
 
+  async function handleUpdateMistake(id, updates) {
+    await updateMistake(id, updates);
+  }
+
   async function handleAddConfidentReceipt(receiptData) {
     await addConfidentReceipt(receiptData);
   }
@@ -346,6 +350,8 @@ function App() {
             mistakes={mistakes}
             onAddMistake={handleAddMistake}
             onDeleteMistake={handleDeleteMistake}
+            onUpdateMistake={handleUpdateMistake}
+            onUploadImage={uploadImage}
           />
         </div>
 
