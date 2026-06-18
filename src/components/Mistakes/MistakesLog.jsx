@@ -21,16 +21,17 @@ function getMostCommonMistake(mistakes) {
   return maxType;
 }
 
-const EMPTY_FORM = {
+const getEmptyForm = () => ({
   ticker: '',
   mistake_type: '',
   tuition_loss: '',
   notes: '',
   action_plan: '',
-};
+  date: new Date().toISOString().split('T')[0],
+});
 
 export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, onUpdateMistake, onUploadImage }) {
-  const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [form, setForm] = useState(getEmptyForm());
   const [editingId, setEditingId] = useState(null);
   
   // Image Upload state
@@ -77,7 +78,7 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
   }
 
   function resetForm() {
-    setForm({ ...EMPTY_FORM });
+    setForm(getEmptyForm());
     setImageUrls([]);
     setEditingId(null);
   }
@@ -90,6 +91,7 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
       tuition_loss: m.tuition_loss || '',
       notes: m.notes || '',
       action_plan: m.action_plan || '',
+      date: m.created_at ? new Date(m.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
     });
     const urls = m.image_url ? m.image_url.split(',').map(u => u.trim()).filter(Boolean) : [];
     setImageUrls(urls);
@@ -111,10 +113,19 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
       image_url: finalImageUrl,
     };
 
+    if (form.date) {
+       // Append time to ensure valid timestamp, or just use the date.
+       // Supabase timestamptz handles YYYY-MM-DD fine, but let's add time to be safe.
+       const existingTime = editingId 
+          ? mistakes.find(m => m.id === editingId)?.created_at?.split('T')[1] || '12:00:00Z'
+          : '12:00:00Z';
+       payload.created_at = `${form.date}T${existingTime}`;
+    }
+
     if (editingId) {
       onUpdateMistake(editingId, payload);
     } else {
-      payload.created_at = new Date().toISOString();
+      payload.created_at = payload.created_at || new Date().toISOString();
       onAddMistake(payload);
     }
 
@@ -134,15 +145,15 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
             Tuition Dashboard
           </div>
           <div className="tuition-grid" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div className="tuition-stat danger" style={{ padding: '24px', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)', textAlign: 'center' }}>
-              <div className="tuition-stat-value" style={{ fontSize: '32px', fontWeight: '800', color: 'var(--danger)', marginBottom: '8px' }}>{fmtRp(totalTuition)}</div>
+            <div className="tuition-stat" style={{ padding: '24px', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border)', textAlign: 'center' }}>
+              <div className="tuition-stat-value" style={{ fontSize: '26px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>{fmtRp(totalTuition)}</div>
               <div className="tuition-stat-label" style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Total Tuition Paid</div>
             </div>
-            <div className="tuition-stat warning" style={{ padding: '20px', background: 'rgba(245, 158, 11, 0.05)', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.2)', textAlign: 'center' }}>
-              <div className="tuition-stat-value" style={{ fontSize: '24px', fontWeight: '800', color: 'var(--warning)', marginBottom: '4px' }}>{totalCount}</div>
+            <div className="tuition-stat" style={{ padding: '20px', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border)', textAlign: 'center' }}>
+              <div className="tuition-stat-value" style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '4px' }}>{totalCount}</div>
               <div className="tuition-stat-label" style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Total Mistakes</div>
             </div>
-            <div className="tuition-stat accent" style={{ padding: '20px', background: 'rgba(249, 115, 22, 0.05)', borderRadius: '12px', border: '1px solid rgba(249, 115, 22, 0.2)', textAlign: 'center' }}>
+            <div className="tuition-stat" style={{ padding: '20px', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border)', textAlign: 'center' }}>
               <div className="tuition-stat-value most-common" style={{ fontSize: '18px', fontWeight: '700', color: 'var(--accent)', marginBottom: '4px' }}>{mostCommon}</div>
               <div className="tuition-stat-label" style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Most Common Mistake</div>
               {mostCommon && mostCommon !== '—' && MISTAKE_SOLUTIONS[mostCommon] && (
@@ -191,17 +202,28 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
               </div>
             </div>
 
-            <div className="field">
-              <label>Tuition Cost (Rp)</label>
-              <input
-                type="number"
-                name="tuition_loss"
-                value={form.tuition_loss}
-                onChange={handleChange}
-                placeholder="0"
-                min="0"
-                step="1000"
-              />
+            <div className="field-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="field">
+                <label>Tuition Cost (Rp)</label>
+                <input
+                  type="number"
+                  name="tuition_loss"
+                  value={form.tuition_loss}
+                  onChange={handleChange}
+                  placeholder="0"
+                  min="0"
+                  step="1000"
+                />
+              </div>
+              <div className="field">
+                <label>Date of Mistake</label>
+                <input
+                  type="date"
+                  name="date"
+                  value={form.date}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
 
             <div className="field">
@@ -289,7 +311,7 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
                       </span>
                     </div>
                     <div className="mistake-receipt-actions" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      <span className="mistake-tuition" style={{ color: 'var(--danger)', fontWeight: 'bold', fontSize: '16px' }}>{fmtRp(m.tuition_loss || 0)}</span>
+                      <span className="mistake-tuition" style={{ color: 'var(--text-primary)', fontWeight: 'bold', fontSize: '15px' }}>{fmtRp(m.tuition_loss || 0)}</span>
                       
                       <div style={{ display: 'flex', gap: '4px' }}>
                         <button

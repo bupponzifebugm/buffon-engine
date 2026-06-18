@@ -38,6 +38,7 @@ export function useMistakes(user) {
         notes: m.notes,
         action_plan: m.action_plan,
         image_url: m.image_url,
+        created_at: m.created_at, // Allow overriding the date
       })
       .select()
       .single();
