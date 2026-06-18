@@ -214,7 +214,7 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
                   onChange={handleChange}
                   placeholder="0"
                   min="0"
-                  step="1000"
+                  step="any"
                 />
               </div>
               <div className="field">
