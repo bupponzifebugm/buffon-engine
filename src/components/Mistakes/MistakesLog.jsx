@@ -187,18 +187,20 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
               </div>
               <div className="field">
                 <label>Lesson Category</label>
-                <select
+                <input
+                  list="mistake-types"
                   name="mistake_type"
                   value={form.mistake_type}
                   onChange={handleChange}
-                >
-                  <option value="">— Select category —</option>
+                  placeholder="Select or type custom category..."
+                />
+                <datalist id="mistake-types">
                   {(MISTAKE_TYPES || []).map((type) => (
                     <option key={type} value={type}>
                       {type}
                     </option>
                   ))}
-                </select>
+                </datalist>
               </div>
             </div>
 
