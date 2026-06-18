@@ -151,8 +151,8 @@ export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, o
 
   // Filter notes based on search query
   const filteredNotes = notes.filter(note => {
-    // Hide dummy Notion notes from the visible list
-    if (note.title === 'Journaled externally (Notion) ✅') {
+    // Hide dummy Notion notes from the visible list (using .includes to catch all variations)
+    if (note.title && note.title.includes('Journaled externally (Notion)')) {
       return false;
     }
 
@@ -180,7 +180,7 @@ export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, o
     const existingNote = notes.find(n => {
       const d = new Date(n.created_at || n.id);
       const nDateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      return nDateStr === dateStr && n.title !== 'Journaled externally (Notion) ✅';
+      return nDateStr === dateStr && (!n.title || !n.title.includes('Journaled externally (Notion)'));
     });
 
     if (existingNote) {
@@ -206,8 +206,27 @@ export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, o
   const todayNotionNote = notes.find(n => {
      const d = new Date(n.created_at || n.id);
      const nDateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-     return nDateStr === localTodayStr && n.title === 'Journaled externally (Notion) ✅';
+     return nDateStr === localTodayStr && n.title && n.title.includes('Journaled externally (Notion)');
   });
+
+  const groupedNotes = useMemo(() => {
+    const groups = {};
+    const orderedKeys = [];
+    filteredNotes.forEach(note => {
+      const d = new Date(note.created_at || note.id);
+      const monthYear = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
+      if (!groups[monthYear]) {
+        groups[monthYear] = [];
+        orderedKeys.push(monthYear);
+      }
+      groups[monthYear].push(note);
+    });
+
+    return orderedKeys.map(key => ({
+      label: key,
+      notes: groups[key]
+    }));
+  }, [filteredNotes]);
 
   return (
     <div className="journal-layout">
@@ -261,58 +280,65 @@ export default function Journal({ notes, activeNote, onCreateNote, onOpenNote, o
               {searchQuery ? 'No matching notes found.' : 'No notes yet.'}
             </div>
           ) : (
-            filteredNotes.map(note => {
-              const isActive = activeNote?.id === note.id;
-              return (
-                <div key={note.id}>
-                  <div
-                    className={`journal-item${isActive ? ' active' : ''}`}
-                    onClick={() => onOpenNote(note.id)}
-                  >
-                    <div className="journal-item-title">{note.title || 'Untitled Entry'}</div>
-                    <div className="journal-item-date">
-                      {new Date(note.created_at || note.id).toLocaleDateString('id-ID', {
-                        day: 'numeric', month: 'short'
-                      })}
-                    </div>
-                  </div>
-                  
-                  {/* Table of Contents for Active Note */}
-                  {isActive && headings.length > 0 && (
-                    <div className="journal-toc">
-                      {headings.map((h, i) => (
-                        <div 
-                          key={h.id + i} 
-                          className="toc-item"
-                          style={{
-                            paddingLeft: `${(h.level - 1) * 12 + 12}px`,
-                            fontSize: '12px',
-                            color: 'var(--text-secondary)',
-                            paddingTop: '6px',
-                            paddingBottom: '6px',
-                            cursor: 'pointer',
-                            borderLeft: '2px solid transparent',
-                          }}
-                          onClick={() => handleHeadingClick(h.id)}
-                          onMouseEnter={e => {
-                            e.currentTarget.style.color = 'var(--text-primary)';
-                            e.currentTarget.style.borderLeft = '2px solid var(--accent)';
-                            e.currentTarget.style.background = 'var(--bg-secondary)';
-                          }}
-                          onMouseLeave={e => {
-                            e.currentTarget.style.color = 'var(--text-secondary)';
-                            e.currentTarget.style.borderLeft = '2px solid transparent';
-                            e.currentTarget.style.background = 'transparent';
-                          }}
-                        >
-                          {h.text}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+            groupedNotes.map(group => (
+              <div key={group.label} className="journal-month-group">
+                <div className="journal-month-header" style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginTop: 16, marginBottom: 8, paddingLeft: 4, letterSpacing: '0.05em' }}>
+                  {group.label}
                 </div>
-              );
-            })
+                {group.notes.map(note => {
+                  const isActive = activeNote?.id === note.id;
+                  return (
+                    <div key={note.id}>
+                      <div
+                        className={`journal-item${isActive ? ' active' : ''}`}
+                        onClick={() => onOpenNote(note.id)}
+                      >
+                        <div className="journal-item-title">{note.title || 'Untitled Entry'}</div>
+                        <div className="journal-item-date">
+                          {new Date(note.created_at || note.id).toLocaleDateString('id-ID', {
+                            day: 'numeric', month: 'short'
+                          })}
+                        </div>
+                      </div>
+                      
+                      {/* Table of Contents for Active Note */}
+                      {isActive && headings.length > 0 && (
+                        <div className="journal-toc">
+                          {headings.map((h, i) => (
+                            <div 
+                              key={h.id + i} 
+                              className="toc-item"
+                              style={{
+                                paddingLeft: `${(h.level - 1) * 12 + 12}px`,
+                                fontSize: '12px',
+                                color: 'var(--text-secondary)',
+                                paddingTop: '6px',
+                                paddingBottom: '6px',
+                                cursor: 'pointer',
+                                borderLeft: '2px solid transparent',
+                              }}
+                              onClick={() => handleHeadingClick(h.id)}
+                              onMouseEnter={e => {
+                                e.currentTarget.style.color = 'var(--text-primary)';
+                                e.currentTarget.style.borderLeft = '2px solid var(--accent)';
+                                e.currentTarget.style.background = 'var(--bg-secondary)';
+                              }}
+                              onMouseLeave={e => {
+                                e.currentTarget.style.color = 'var(--text-secondary)';
+                                e.currentTarget.style.borderLeft = '2px solid transparent';
+                                e.currentTarget.style.background = 'transparent';
+                              }}
+                            >
+                              {h.text}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))
           )}
         </div>
       </div>
