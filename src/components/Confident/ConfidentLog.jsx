@@ -1,43 +1,43 @@
-import { useState, useRef, useEffect } from 'react';
-import { Plus, Image as ImageIcon, Trash2, Edit2, X, Star, GripVertical } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, X, Trash2, Edit2, Star, GripVertical, Image as ImageIcon, Folder, ChevronLeft } from 'lucide-react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { SortableContext, arrayMove, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 function SortableReceiptItem({ receipt, isPinned, onTogglePin, onStartEdit, onDelete }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: receipt.id });
-  
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ 
+    id: receipt.id,
+    disabled: isPinned 
+  });
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    zIndex: isDragging ? 100 : 'auto',
-    opacity: isDragging ? 0.8 : 1,
-    position: 'relative',
+    zIndex: isDragging ? 10 : 1,
+    position: 'relative'
   };
 
   const rUrls = receipt.image_url ? receipt.image_url.split(',').map(u => u.trim()).filter(Boolean) : [];
 
   return (
-    <div ref={setNodeRef} style={style} className="confident-card card">
+    <div ref={setNodeRef} style={style} className={`confident-card card ${isPinned ? 'pinned' : ''} ${isDragging ? 'dragging' : ''}`}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* Drag Handle - Only active if NOT pinned */}
           {!isPinned && (
-            <div {...attributes} {...listeners} style={{ cursor: 'grab', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}>
+            <div {...attributes} {...listeners} style={{ cursor: 'grab', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', padding: 4 }}>
               <GripVertical size={18} />
             </div>
           )}
-          <h3 style={{ fontSize: 18, fontFamily: 'var(--font-serif)', margin: 0, color: 'var(--text-primary)' }}>
-            {receipt.title}
-          </h3>
+          <h3 style={{ fontSize: 16, margin: 0, fontWeight: 600 }}>{receipt.title}</h3>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <button 
             onClick={() => onTogglePin(receipt.id)}
             style={{ background: 'transparent', border: 'none', color: isPinned ? '#fbbf24' : 'var(--text-secondary)', cursor: 'pointer', padding: 4 }}
-            title={isPinned ? "Unpin Receipt" : "Pin to Top"}
+            title={isPinned ? "Unpin" : "Pin to top"}
           >
-            <Star size={16} fill={isPinned ? '#fbbf24' : 'none'} />
+            <Star size={16} fill={isPinned ? "#fbbf24" : "none"} />
           </button>
           <button 
             onClick={() => onStartEdit(receipt)}
@@ -84,12 +84,16 @@ function SortableReceiptItem({ receipt, isPinned, onTogglePin, onStartEdit, onDe
 export default function ConfidentLog({ receipts, onAddReceipt, onDeleteReceipt, onUpdateReceipt, onUploadImage }) {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  
+  // Folder state
+  const [activeFolder, setActiveFolder] = useState(null); // 'YYYY-MM'
 
   // Form states
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [imageUrls, setImageUrls] = useState([]); 
   const [isUploading, setIsUploading] = useState(false);
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const fileInputRef = useRef(null);
 
   // Persistence for Pins and Ordering
@@ -110,6 +114,7 @@ export default function ConfidentLog({ receipts, onAddReceipt, onDeleteReceipt, 
     setTitle('');
     setDescription('');
     setImageUrls([]);
+    setDate(new Date().toISOString().split('T')[0]);
     setIsAdding(false);
     setEditingId(null);
   }
@@ -118,6 +123,7 @@ export default function ConfidentLog({ receipts, onAddReceipt, onDeleteReceipt, 
     setEditingId(receipt.id);
     setTitle(receipt.title || '');
     setDescription(receipt.description || '');
+    setDate(receipt.created_at ? new Date(receipt.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
     const urls = receipt.image_url ? receipt.image_url.split(',').map(u => u.trim()).filter(Boolean) : [];
     setImageUrls(urls);
     setIsAdding(false);
@@ -156,19 +162,25 @@ export default function ConfidentLog({ receipts, onAddReceipt, onDeleteReceipt, 
     }
     
     const finalImageUrl = imageUrls.join(',');
+    
+    const payload = {
+      title,
+      description,
+      image_url: finalImageUrl
+    };
+    
+    if (date) {
+      const existingTime = editingId 
+         ? receipts.find(r => r.id === editingId)?.created_at?.split('T')[1] || '12:00:00Z'
+         : '12:00:00Z';
+      payload.created_at = `${date}T${existingTime}`;
+    }
 
     if (editingId) {
-      onUpdateReceipt(editingId, {
-        title,
-        description,
-        image_url: finalImageUrl
-      });
+      onUpdateReceipt(editingId, payload);
     } else {
-      onAddReceipt({
-        title,
-        description,
-        image_url: finalImageUrl
-      });
+      payload.created_at = payload.created_at || new Date().toISOString();
+      onAddReceipt(payload);
     }
     
     resetForm();
@@ -188,8 +200,38 @@ export default function ConfidentLog({ receipts, onAddReceipt, onDeleteReceipt, 
     return new Date(b.created_at) - new Date(a.created_at);
   });
 
-  const pinnedReceipts = sortedReceipts.filter(r => pinnedIds.includes(r.id));
-  const unpinnedReceipts = sortedReceipts.filter(r => !pinnedIds.includes(r.id));
+  // Group receipts into folders
+  const folders = sortedReceipts.reduce((acc, r) => {
+    const dateStr = r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString();
+    const folderKey = dateStr.substring(0, 7); // 'YYYY-MM'
+    
+    if (!acc[folderKey]) {
+      const dateObj = new Date(dateStr);
+      const displayName = dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      
+      acc[folderKey] = {
+        id: folderKey,
+        name: displayName,
+        count: 0,
+        items: []
+      };
+    }
+    
+    acc[folderKey].count += 1;
+    acc[folderKey].items.push(r);
+    
+    return acc;
+  }, {});
+
+  const sortedFolderKeys = Object.keys(folders).sort((a, b) => b.localeCompare(a));
+  
+  // If active folder is set, compute pinned and unpinned just for that folder
+  let pinnedReceipts = [];
+  let unpinnedReceipts = [];
+  if (activeFolder && folders[activeFolder]) {
+    pinnedReceipts = folders[activeFolder].items.filter(r => pinnedIds.includes(r.id));
+    unpinnedReceipts = folders[activeFolder].items.filter(r => !pinnedIds.includes(r.id));
+  }
 
   function handleDragEnd(event) {
     const { active, over } = event;
@@ -197,8 +239,13 @@ export default function ConfidentLog({ receipts, onAddReceipt, onDeleteReceipt, 
       const activeIndex = unpinnedReceipts.findIndex(r => r.id === active.id);
       const overIndex = unpinnedReceipts.findIndex(r => r.id === over.id);
       const newUnpinned = arrayMove(unpinnedReceipts, activeIndex, overIndex);
-      const newOrder = [...pinnedReceipts.map(r=>r.id), ...newUnpinned.map(r=>r.id)];
-      setReceiptOrder(newOrder);
+      
+      // Update global order. We need to preserve the order of receipts NOT in this folder as well.
+      // Easiest way: take existing receiptOrder, filter out the unpinned from THIS folder, 
+      // and append them back in the new order.
+      const unpinnedIds = unpinnedReceipts.map(r => r.id);
+      const filteredOrder = receiptOrder.filter(id => !unpinnedIds.includes(id));
+      setReceiptOrder([...filteredOrder, ...newUnpinned.map(r => r.id)]);
     }
   }
 
@@ -206,9 +253,15 @@ export default function ConfidentLog({ receipts, onAddReceipt, onDeleteReceipt, 
   const renderInlineEditForm = () => (
     <div className="confident-card card mistake-form" style={{ border: '1px solid var(--accent)' }}>
       <div className="card-title">Editing Receipt</div>
-      <div className="field">
-        <label>Title</label>
-        <input type="text" value={title} onChange={e => setTitle(e.target.value)} />
+      <div className="field-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="field">
+          <label>Title</label>
+          <input type="text" value={title} onChange={e => setTitle(e.target.value)} />
+        </div>
+        <div className="field">
+          <label>Date</label>
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+        </div>
       </div>
       <div className="field">
         <label>Description</label>
@@ -256,11 +309,16 @@ export default function ConfidentLog({ receipts, onAddReceipt, onDeleteReceipt, 
 
       {isAdding && !editingId && (
         <div className="card mistake-form" style={{ marginBottom: 24 }}>
-          {/* Exact same form layout as inline edit */}
           <div className="card-title">New Confident Receipt</div>
-          <div className="field">
-            <label>Title (e.g., Profit on March 2026)</label>
-            <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="A milestone or big win to remember..." />
+          <div className="field-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div className="field">
+              <label>Title (e.g., Profit on March 2026)</label>
+              <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="A milestone or big win to remember..." />
+            </div>
+            <div className="field">
+              <label>Date</label>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+            </div>
           </div>
           <div className="field">
             <label>Description (Optional)</label>
@@ -290,39 +348,139 @@ export default function ConfidentLog({ receipts, onAddReceipt, onDeleteReceipt, 
         </div>
       )}
 
-      {/* PINNED SECTION */}
-      {pinnedReceipts.length > 0 && (
-        <div style={{ marginBottom: 40 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, color: '#fbbf24', fontSize: 14, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 }}>
-            <Star size={16} fill="#fbbf24" /> Hall of Fame (Pinned)
-          </div>
-          <div className="confident-gallery">
-            {pinnedReceipts.map(receipt => 
-              editingId === receipt.id 
-                ? <div key={receipt.id}>{renderInlineEditForm()}</div> 
-                : <SortableReceiptItem key={receipt.id} receipt={receipt} isPinned={true} onTogglePin={togglePin} onStartEdit={startEditing} onDelete={onDeleteReceipt} />
-            )}
-          </div>
-        </div>
-      )}
+      {/* Folders View */}
+      <div className="card" style={{ width: '100%' }}>
+        {!activeFolder && (
+          <>
+            <div className="card-title">
+              <Folder size={16} />
+              Confident Folders
+            </div>
 
-      {/* UNPINNED SECTION (DRAGGABLE) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, color: 'var(--text-secondary)', fontSize: 14, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 }}>
-        Receipt Feed
-      </div>
-      <div className="confident-gallery">
-        {unpinnedReceipts.length === 0 && !isAdding && pinnedReceipts.length === 0 ? (
-          <div className="empty-state">No confident receipts logged yet. Start building your hall of fame.</div>
-        ) : (
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={unpinnedReceipts.map(r => r.id)} strategy={verticalListSortingStrategy}>
-              {unpinnedReceipts.map(receipt => 
-                editingId === receipt.id 
-                  ? <div key={receipt.id}>{renderInlineEditForm()}</div> 
-                  : <SortableReceiptItem key={receipt.id} receipt={receipt} isPinned={false} onTogglePin={togglePin} onStartEdit={startEditing} onDelete={onDeleteReceipt} />
+            {(!receipts || receipts.length === 0) ? (
+              <div className="empty-state" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                No confident receipts logged yet. Start building your hall of fame.
+              </div>
+            ) : (
+              <div className="folders-grid" style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', 
+                gap: '16px', 
+                marginTop: '16px' 
+              }}>
+                {sortedFolderKeys.map((key) => {
+                  const folder = folders[key];
+                  return (
+                    <div 
+                      key={key} 
+                      className="folder-card"
+                      onClick={() => setActiveFolder(key)}
+                      style={{ 
+                        background: 'var(--bg-secondary)', 
+                        border: '1px solid var(--border)', 
+                        borderRadius: '12px', 
+                        padding: '16px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px',
+                        transition: 'all 0.2s',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--accent)';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border)';
+                        e.currentTarget.style.transform = 'none';
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ background: 'rgba(99, 102, 241, 0.1)', padding: '10px', borderRadius: '8px', color: 'var(--accent)' }}>
+                          <Folder size={24} fill="currentColor" fillOpacity={0.2} />
+                        </div>
+                        <div style={{ fontWeight: '600', fontSize: '15px' }}>
+                          {folder.name}
+                        </div>
+                      </div>
+                      
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--text-secondary)', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+                        <span>{folder.count} receipts</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Single Folder View */}
+        {activeFolder && (
+          <>
+            <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button 
+                onClick={() => setActiveFolder(null)}
+                style={{ 
+                  background: 'var(--bg-secondary)', 
+                  border: '1px solid var(--border)', 
+                  borderRadius: '6px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  padding: '6px', 
+                  cursor: 'pointer',
+                  color: 'var(--text-primary)',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--border)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                title="Back to Folders"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span>{folders[activeFolder]?.name} Receipts</span>
+            </div>
+
+            <div style={{ marginTop: '24px' }}>
+              {/* PINNED SECTION inside folder */}
+              {pinnedReceipts.length > 0 && (
+                <div style={{ marginBottom: 40 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, color: '#fbbf24', fontSize: 14, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 }}>
+                    <Star size={16} fill="#fbbf24" /> Hall of Fame (Pinned)
+                  </div>
+                  <div className="confident-gallery">
+                    {pinnedReceipts.map(receipt => 
+                      editingId === receipt.id 
+                        ? <div key={receipt.id}>{renderInlineEditForm()}</div> 
+                        : <SortableReceiptItem key={receipt.id} receipt={receipt} isPinned={true} onTogglePin={togglePin} onStartEdit={startEditing} onDelete={onDeleteReceipt} />
+                    )}
+                  </div>
+                </div>
               )}
-            </SortableContext>
-          </DndContext>
+
+              {/* UNPINNED SECTION inside folder */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, color: 'var(--text-secondary)', fontSize: 14, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 }}>
+                Receipt Feed
+              </div>
+              <div className="confident-gallery">
+                {unpinnedReceipts.length === 0 && !isAdding && pinnedReceipts.length === 0 ? (
+                  <div className="empty-state">No confident receipts logged yet. Start building your hall of fame.</div>
+                ) : (
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={unpinnedReceipts.map(r => r.id)} strategy={verticalListSortingStrategy}>
+                      {unpinnedReceipts.map(receipt => 
+                        editingId === receipt.id 
+                          ? <div key={receipt.id}>{renderInlineEditForm()}</div> 
+                          : <SortableReceiptItem key={receipt.id} receipt={receipt} isPinned={false} onTogglePin={togglePin} onStartEdit={startEditing} onDelete={onDeleteReceipt} />
+                      )}
+                    </SortableContext>
+                  </DndContext>
+                )}
+              </div>
+            </div>
+          </>
         )}
       </div>
       
