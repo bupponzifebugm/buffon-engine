@@ -8,7 +8,7 @@ const TABS = [
   { id: 'tab-cards', label: 'Hall of Fame' },
   { id: 'tab-risk', label: 'Risk & Drawdown' },
   { id: 'tab-system', label: 'Trading System' },
-  { id: 'tab-mistakes', label: 'Mistake Receipts' },
+  { id: 'tab-mistakes', label: 'Growth Insights' },
   { id: 'tab-confident', label: 'Confident Receipts' },
   { id: 'tab-mindset', label: 'Mindset & Lessons' },
   { id: 'tab-journal', label: 'Journal / Notes' },

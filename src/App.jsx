@@ -344,7 +344,7 @@ function App() {
           <TradingSystem />
         </div>
 
-        {/* === MISTAKE RECEIPTS TAB === */}
+        {/* === GROWTH INSIGHTS TAB === */}
         <div className={`tab-content${activeTab === 'tab-mistakes' ? ' active' : ''}`}>
           <MistakesLog
             mistakes={mistakes}

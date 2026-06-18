@@ -142,7 +142,7 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
         <div className="card" style={{ height: '100%' }}>
           <div className="card-title">
             <Receipt size={16} />
-            Tuition Dashboard
+            Learning Investment
           </div>
           <div className="tuition-grid" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div className="tuition-stat" style={{ padding: '24px', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border)', textAlign: 'center' }}>
@@ -151,11 +151,11 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
             </div>
             <div className="tuition-stat" style={{ padding: '20px', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border)', textAlign: 'center' }}>
               <div className="tuition-stat-value" style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '4px' }}>{totalCount}</div>
-              <div className="tuition-stat-label" style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Total Mistakes</div>
+              <div className="tuition-stat-label" style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Lessons Logged</div>
             </div>
             <div className="tuition-stat" style={{ padding: '20px', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border)', textAlign: 'center' }}>
               <div className="tuition-stat-value most-common" style={{ fontSize: '18px', fontWeight: '700', color: 'var(--accent)', marginBottom: '4px' }}>{mostCommon}</div>
-              <div className="tuition-stat-label" style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Most Common Mistake</div>
+              <div className="tuition-stat-label" style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Most Frequent Lesson</div>
               {mostCommon && mostCommon !== '—' && MISTAKE_SOLUTIONS[mostCommon] && (
                 <div className="tuition-stat-solution" style={{ fontSize: '12px', marginTop: '12px', color: 'var(--accent)', opacity: 0.95, lineHeight: 1.4 }}>
                   <strong>💡 Solution:</strong> {MISTAKE_SOLUTIONS[mostCommon]}
@@ -169,7 +169,7 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
         <div className="card" style={{ height: '100%', border: editingId ? '1px solid var(--accent)' : undefined }}>
           <div className="card-title">
             <AlertTriangle size={16} />
-            {editingId ? 'Edit Mistake' : 'Log New Mistake'}
+            {editingId ? 'Edit Insight' : 'Log Growth Insight'}
           </div>
           <form className="mistake-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div className="field-row" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px' }}>
@@ -186,13 +186,13 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
                 />
               </div>
               <div className="field">
-                <label>Mistake Type</label>
+                <label>Lesson Category</label>
                 <select
                   name="mistake_type"
                   value={form.mistake_type}
                   onChange={handleChange}
                 >
-                  <option value="">— Select mistake —</option>
+                  <option value="">— Select category —</option>
                   {(MISTAKE_TYPES || []).map((type) => (
                     <option key={type} value={type}>
                       {type}
@@ -216,7 +216,7 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
                 />
               </div>
               <div className="field">
-                <label>Date of Mistake</label>
+                <label>Date</label>
                 <input
                   type="date"
                   name="date"
@@ -277,7 +277,7 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
               )}
               <button type="submit" className="btn" disabled={!form.ticker || !form.mistake_type} style={{ flex: 2 }}>
                 <Receipt size={16} />
-                {editingId ? 'Save Changes' : 'Log Mistake Receipt'}
+                {editingId ? 'Save Changes' : 'Log Insight'}
               </button>
             </div>
           </form>
@@ -289,12 +289,12 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
       <div className="card" style={{ width: '100%' }}>
         <div className="card-title">
           <TrendingDown size={16} />
-          Mistake History
+          Discipline Tracker
         </div>
 
         {(!mistakes || mistakes.length === 0) ? (
           <div className="empty-state" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            No mistakes logged yet. Keep it that way — or be honest when they happen.
+            No insights logged yet. Start tracking your lessons to grow.
           </div>
         ) : (
           <div className="mistake-history" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -317,7 +317,7 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
                         <button
                           className="btn-small"
                           onClick={() => startEditing(m)}
-                          title="Edit mistake"
+                          title="Edit insight"
                           style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px' }}
                         >
                           <Edit2 size={15} />
@@ -325,9 +325,9 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
                         <button
                           className="btn-small"
                           onClick={() => {
-                            if(confirm(`Delete mistake for ${m.ticker}?`)) onDeleteMistake(m.id);
+                            if(confirm(`Delete insight for ${m.ticker}?`)) onDeleteMistake(m.id);
                           }}
-                          title="Delete mistake"
+                          title="Delete insight"
                           style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '4px' }}
                         >
                           <Trash2 size={15} />
@@ -353,7 +353,7 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
                     {mUrls.length > 0 && (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 300px))', gap: '12px', marginTop: '8px' }}>
                         {mUrls.map((u, i) => (
-                          <img key={i} src={u} alt="Mistake proof" style={{ width: '100%', borderRadius: '8px', border: '1px solid var(--border)' }} />
+                          <img key={i} src={u} alt="Insight proof" style={{ width: '100%', borderRadius: '8px', border: '1px solid var(--border)' }} />
                         ))}
                       </div>
                     )}
