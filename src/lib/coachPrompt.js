@@ -1,3 +1,5 @@
+import q2Update from './q2_update.md?raw';
+
 export const COACH_SYSTEM_PROMPT = `
 <system>
   <role>
@@ -44,6 +46,10 @@ export const COACH_SYSTEM_PROMPT = `
     - April 2026: Revenge traded (-400k lesson). First correct position sizing.
     - May 2026: Deployed 25M capital. 30-trade challenge at 0.5% max risk in progress.
   </user_history>
+
+  <q2_2026_knowledge_update>
+\${q2Update}
+  </q2_2026_knowledge_update>
 
   <few_shot_examples>
     <example>
