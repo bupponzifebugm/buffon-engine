@@ -32,6 +32,7 @@ import AnalyticsDashboard from './components/Dashboard/AnalyticsDashboard';
 import CardGallery from './components/Cards/CardGallery';
 import ConfidentLog from './components/Confident/ConfidentLog';
 import TradingCoach from './components/Chat/TradingCoach';
+import NightPlanner from './components/Planner/NightPlanner';
 
 // Constants
 import { TIERS } from './lib/constants';
@@ -376,6 +377,11 @@ function App() {
             onDeleteNote={deleteNote}
             onUploadImage={uploadImage}
           />
+        </div>
+
+        {/* === NIGHT PLANNER TAB === */}
+        <div className={`tab-content${activeTab === 'tab-planner' ? ' active' : ''}`}>
+          <NightPlanner />
         </div>
 
         {/* === DAILY QUOTE TAB === */}

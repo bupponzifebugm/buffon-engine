@@ -11,6 +11,7 @@ const TABS = [
   { id: 'tab-confident', label: 'Confident Receipts' },
   { id: 'tab-mindset', label: 'Mindset & Lessons' },
   { id: 'tab-journal', label: 'Journal / Notes' },
+  { id: 'tab-planner', label: '🌙 Night Planner' },
   { id: 'tab-quotes', label: 'Daily Quote' },
 ];
 
