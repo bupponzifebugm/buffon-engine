@@ -3,6 +3,7 @@ import { Receipt, Trash2, TrendingDown, AlertTriangle, Edit2, Image as ImageIcon
 import StoryViewer from '../Cards/StoryViewer';
 import { MISTAKE_TYPES, MISTAKE_SOLUTIONS } from '../../lib/constants';
 import { fmtRp, fmtDate } from '../../lib/utils';
+import GraveyardVisualizer from './GraveyardVisualizer';
 
 function getMostCommonMistake(mistakes) {
   if (!mistakes || mistakes.length === 0) return '—';
@@ -525,6 +526,10 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
         )}
 
       </div>
+
+      {/* ── Graveyard of Mistakes Visualizer ── */}
+      <GraveyardVisualizer mistakes={mistakes} />
+
     </div>
   );
 }
