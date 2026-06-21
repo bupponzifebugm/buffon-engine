@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
-import { Receipt, Trash2, TrendingDown, AlertTriangle, Edit2, Image as ImageIcon, X, Folder, ChevronLeft } from 'lucide-react';
+import { Receipt, Trash2, TrendingDown, AlertTriangle, Edit2, Image as ImageIcon, X, Folder, ChevronLeft, PlayCircle } from 'lucide-react';
+import StoryViewer from '../Cards/StoryViewer';
 import { MISTAKE_TYPES, MISTAKE_SOLUTIONS } from '../../lib/constants';
 import { fmtRp, fmtDate } from '../../lib/utils';
 
@@ -36,6 +37,7 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
   
   // Folder state
   const [activeFolder, setActiveFolder] = useState(null); // 'YYYY-MM'
+  const [isStoryModeOpen, setIsStoryModeOpen] = useState(false);
 
   // Image Upload state
   const [imageUrls, setImageUrls] = useState([]);
@@ -470,29 +472,51 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
         {/* If folder selected, show its contents */}
         {activeFolder && (
           <>
-            <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <button 
-                onClick={() => setActiveFolder(null)}
-                style={{ 
-                  background: 'var(--bg-secondary)', 
-                  border: '1px solid var(--border)', 
-                  borderRadius: '6px', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  padding: '6px', 
-                  cursor: 'pointer',
-                  color: 'var(--text-primary)',
-                  transition: 'background 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--border)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
-                title="Back to Folders"
+            <div className="card-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button 
+                  onClick={() => setActiveFolder(null)}
+                  style={{ 
+                    background: 'var(--bg-secondary)', 
+                    border: '1px solid var(--border)', 
+                    borderRadius: '6px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    padding: '6px', 
+                    cursor: 'pointer',
+                    color: 'var(--text-primary)',
+                    transition: 'background 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--border)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                  title="Back to Folders"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span>{folders[activeFolder]?.name} Lessons</span>
+              </div>
+              <button
+                className="btn-small"
+                onClick={() => setIsStoryModeOpen(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--accent)', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontWeight: '600', cursor: 'pointer' }}
               >
-                <ChevronLeft size={16} />
+                <PlayCircle size={16} /> Play Story Review
               </button>
-              <span>{folders[activeFolder]?.name} Lessons</span>
             </div>
+
+            {isStoryModeOpen && (
+              <StoryViewer
+                items={folders[activeFolder]?.items || []}
+                type="mistake"
+                onClose={() => setIsStoryModeOpen(false)}
+                onEdit={(m) => {
+                  startEditing(m);
+                  setIsStoryModeOpen(false);
+                }}
+                onDelete={onDeleteMistake}
+              />
+            )}
 
             <div className="mistake-history" style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
               {folders[activeFolder]?.items.map(renderMistakeCard)}

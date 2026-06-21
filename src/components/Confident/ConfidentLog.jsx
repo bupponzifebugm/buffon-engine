@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, X, Trash2, Edit2, Star, GripVertical, Image as ImageIcon, Folder, ChevronLeft } from 'lucide-react';
+import { Plus, X, Trash2, Edit2, Star, GripVertical, Image as ImageIcon, Folder, ChevronLeft, PlayCircle } from 'lucide-react';
+import { fmtRp } from '../../lib/utils';
+import StoryViewer from '../Cards/StoryViewer';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -87,6 +89,47 @@ export default function ConfidentLog({ receipts, onAddReceipt, onDeleteReceipt, 
   
   // Folder state
   const [activeFolder, setActiveFolder] = useState(null); // 'YYYY-MM'
+  const [isStoryModeOpen, setIsStoryModeOpen] = useState(false);
+
+  // Confidence Jar State
+  const [jarEntries, setJarEntries] = useState(() => JSON.parse(localStorage.getItem('buffon_jar_entries') || '[]'));
+  const [jarTarget, setJarTarget] = useState(() => parseFloat(localStorage.getItem('buffon_jar_target') || '10000000'));
+  const [isAddingToJar, setIsAddingToJar] = useState(false);
+  const [jarAmountInput, setJarAmountInput] = useState('');
+  const [jarTickerInput, setJarTickerInput] = useState('');
+  const [jarDateInput, setJarDateInput] = useState(new Date().toISOString().split('T')[0]);
+
+  useEffect(() => {
+    localStorage.setItem('buffon_jar_entries', JSON.stringify(jarEntries));
+  }, [jarEntries]);
+
+  useEffect(() => {
+    localStorage.setItem('buffon_jar_target', jarTarget.toString());
+  }, [jarTarget]);
+
+  const totalJarProfit = jarEntries.reduce((sum, entry) => sum + parseFloat(entry.amount), 0);
+  const fillPercentage = Math.min(100, Math.max(0, (totalJarProfit / jarTarget) * 100));
+
+  function handleAddJarEntry() {
+    if (!jarAmountInput || isNaN(jarAmountInput) || !jarTickerInput) {
+      alert("Please enter a valid amount and ticker.");
+      return;
+    }
+    const newEntry = {
+      id: Math.random().toString(36).substring(2, 9),
+      amount: parseFloat(jarAmountInput),
+      ticker: jarTickerInput.toUpperCase(),
+      date: jarDateInput
+    };
+    setJarEntries(prev => [newEntry, ...prev]);
+    setJarAmountInput('');
+    setJarTickerInput('');
+    setIsAddingToJar(false);
+  }
+
+  function handleDeleteJarEntry(id) {
+    setJarEntries(prev => prev.filter(e => e.id !== id));
+  }
 
   // Form states
   const [title, setTitle] = useState('');
@@ -307,6 +350,164 @@ export default function ConfidentLog({ receipts, onAddReceipt, onDeleteReceipt, 
         )}
       </div>
 
+      <div className="grid-2" style={{ marginBottom: 24 }}>
+        {/* The Jar Visual */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card-title" style={{ alignSelf: 'flex-start', width: '100%' }}>The Confidence Jar</div>
+          <div style={{ position: 'relative', marginTop: 20 }}>
+            <div style={{
+              position: 'relative',
+              width: '180px',
+              height: '250px',
+              border: '4px solid var(--border)',
+              borderTop: 'none',
+              borderRadius: '0 0 30px 30px',
+              background: 'var(--bg-secondary)',
+              boxShadow: 'inset 0 0 20px rgba(0,0,0,0.1)',
+              zIndex: 2
+            }}>
+              {/* Liquid fill container with rounded bottom */}
+              <div style={{
+                position: 'absolute',
+                top: 0, left: 0, right: 0, bottom: 0,
+                borderRadius: '0 0 26px 26px',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: `${fillPercentage}%`,
+                  background: 'linear-gradient(to top, var(--success), #4ade80)',
+                  transition: 'height 1s cubic-bezier(0.4, 0, 0.2, 1)',
+                  opacity: 0.85
+                }} />
+              </div>
+              
+              {/* Total Profit Overlay */}
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                textAlign: 'center',
+                width: '100%',
+                zIndex: 2,
+                textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+              }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>TOTAL WINS</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>
+                  {fmtRp(totalJarProfit)}
+                </div>
+              </div>
+            </div>
+
+            {/* Labels outside the jar */}
+            {jarEntries.slice(0, 8).map((entry, idx) => {
+              const topPos = 30 + (idx * 25);
+              const isLeft = idx % 2 === 0;
+              return (
+                <div key={entry.id} style={{
+                  position: 'absolute',
+                  top: topPos,
+                  [isLeft ? 'right' : 'left']: '50%',
+                  marginLeft: isLeft ? 0 : '90px',
+                  marginRight: isLeft ? '90px' : 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  zIndex: 1,
+                  whiteSpace: 'nowrap'
+                }}>
+                  {isLeft ? (
+                    <>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                        <strong style={{ color: 'var(--text-primary)' }}>{entry.ticker}</strong> +{fmtRp(entry.amount)}
+                      </div>
+                      <div style={{ width: '30px', height: '1px', background: 'var(--border)', marginLeft: '8px' }} />
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ width: '30px', height: '1px', background: 'var(--border)', marginRight: '8px' }} />
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                        <strong style={{ color: 'var(--text-primary)' }}>{entry.ticker}</strong> +{fmtRp(entry.amount)}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          
+          <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-secondary)' }}>
+            Target: Rp 
+            <input 
+              type="number" 
+              value={jarTarget}
+              onChange={(e) => setJarTarget(parseFloat(e.target.value) || 1)}
+              style={{ width: 120, background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '4px 8px', borderRadius: 4 }}
+            />
+          </div>
+        </div>
+
+        {/* Jar Controls & History */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div className="card-title" style={{ margin: 0 }}>Win History</div>
+            <button className="btn-small" onClick={() => setIsAddingToJar(!isAddingToJar)}>
+              <Plus size={14} /> Add Win
+            </button>
+          </div>
+
+          {isAddingToJar && (
+            <div style={{ background: 'var(--bg-secondary)', padding: 16, borderRadius: 8, marginBottom: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Ticker</label>
+                  <input type="text" className="input-field" value={jarTickerInput} onChange={e => setJarTickerInput(e.target.value)} placeholder="e.g. BBCA" style={{ width: '100%' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Date</label>
+                  <input type="date" className="input-field" value={jarDateInput} onChange={e => setJarDateInput(e.target.value)} style={{ width: '100%' }} />
+                </div>
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Profit (Rp)</label>
+                <input type="number" className="input-field" value={jarAmountInput} onChange={e => setJarAmountInput(e.target.value)} placeholder="500000" style={{ width: '100%' }} />
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn" style={{ flex: 1 }} onClick={handleAddJarEntry}>Add to Jar</button>
+                <button className="btn secondary" onClick={() => setIsAddingToJar(false)}>Cancel</button>
+              </div>
+            </div>
+          )}
+
+          <div style={{ flex: 1, overflowY: 'auto', maxHeight: '250px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {jarEntries.length === 0 ? (
+              <div style={{ color: 'var(--text-secondary)', fontSize: 13, textAlign: 'center', marginTop: 40 }}>Jar is empty. Log a win!</div>
+            ) : (
+              jarEntries.map(entry => (
+                <div key={entry.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'var(--bg-primary)', borderRadius: 6, border: '1px solid var(--border)' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontWeight: 600, color: 'var(--success)' }}>+ {fmtRp(entry.amount)}</span>
+                      <span style={{ fontSize: 12, background: 'var(--bg-secondary)', border: '1px solid var(--border)', padding: '2px 6px', borderRadius: 4 }}>{entry.ticker}</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>{new Date(entry.date).toLocaleDateString()}</div>
+                  </div>
+                  <button 
+                    onClick={() => handleDeleteJarEntry(entry.id)}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: 4 }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
       {isAdding && !editingId && (
         <div className="card mistake-form" style={{ marginBottom: 24 }}>
           <div className="card-title">New Confident Receipt</div>
@@ -419,29 +620,51 @@ export default function ConfidentLog({ receipts, onAddReceipt, onDeleteReceipt, 
         {/* Single Folder View */}
         {activeFolder && (
           <>
-            <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <button 
-                onClick={() => setActiveFolder(null)}
-                style={{ 
-                  background: 'var(--bg-secondary)', 
-                  border: '1px solid var(--border)', 
-                  borderRadius: '6px', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  padding: '6px', 
-                  cursor: 'pointer',
-                  color: 'var(--text-primary)',
-                  transition: 'background 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--border)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
-                title="Back to Folders"
+            <div className="card-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button 
+                  onClick={() => setActiveFolder(null)}
+                  style={{ 
+                    background: 'var(--bg-secondary)', 
+                    border: '1px solid var(--border)', 
+                    borderRadius: '6px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    padding: '6px', 
+                    cursor: 'pointer',
+                    color: 'var(--text-primary)',
+                    transition: 'background 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--border)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                  title="Back to Folders"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span>{folders[activeFolder]?.name} Receipts</span>
+              </div>
+              <button
+                className="btn-small"
+                onClick={() => setIsStoryModeOpen(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--accent)', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontWeight: '600', cursor: 'pointer' }}
               >
-                <ChevronLeft size={16} />
+                <PlayCircle size={16} /> Play Story Review
               </button>
-              <span>{folders[activeFolder]?.name} Receipts</span>
             </div>
+
+            {isStoryModeOpen && (
+              <StoryViewer
+                items={folders[activeFolder]?.items || []}
+                type="receipt"
+                onClose={() => setIsStoryModeOpen(false)}
+                onEdit={(r) => {
+                  startEditing(r);
+                  setIsStoryModeOpen(false);
+                }}
+                onDelete={onDeleteReceipt}
+              />
+            )}
 
             <div style={{ marginTop: '24px' }}>
               {/* PINNED SECTION inside folder */}

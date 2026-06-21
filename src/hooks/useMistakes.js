@@ -45,6 +45,9 @@ export function useMistakes(user) {
 
     if (!error && data) {
       setMistakes(prev => [data, ...prev]);
+    } else if (error) {
+      alert(`Error saving mistake: ${error.message}`);
+      console.error(error);
     }
   }
 
@@ -69,6 +72,9 @@ export function useMistakes(user) {
 
     if (!error && data) {
       setMistakes(prev => prev.map(m => m.id === id ? data : m));
+    } else if (error) {
+      alert(`Error updating mistake: ${error.message}`);
+      console.error(error);
     }
   }
 

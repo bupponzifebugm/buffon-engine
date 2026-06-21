@@ -4,7 +4,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 const TABS = [
   { id: 'tab-execute', label: 'Execution Engine' },
   { id: 'tab-analytics', label: 'Analytics & Heatmap' },
-  { id: 'tab-playbook', label: 'Chart Playbook' },
   { id: 'tab-cards', label: 'Hall of Fame' },
   { id: 'tab-risk', label: 'Risk & Drawdown' },
   { id: 'tab-system', label: 'Trading System' },

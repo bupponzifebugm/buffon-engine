@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, X, Settings, Send, Brain, Key, Clock, Plus, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { MessageSquare, X, Settings, Send, Brain, Key, Clock, Plus, ThumbsUp, ThumbsDown, Paperclip, FileText, Image as ImageIcon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { COACH_SYSTEM_PROMPT } from '../../lib/coachPrompt';
 import './TradingCoach.css';
@@ -75,6 +75,9 @@ export default function TradingCoach({
     'I feel like revenge trading.'
   ]);
   
+  const [pendingAttachments, setPendingAttachments] = useState([]);
+  const fileInputRef = useRef(null);
+
   const messagesEndRef = useRef(null);
 
   // Auto-scroll
@@ -139,6 +142,34 @@ export default function TradingCoach({
     setShowHistory(false);
   };
 
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    for (const file of files) {
+      if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64Data = reader.result.split(',')[1];
+          setPendingAttachments(prev => [...prev, {
+            name: file.name,
+            mimeType: file.type,
+            data: base64Data,
+            url: URL.createObjectURL(file)
+          }]);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        alert('Please select an image or PDF file.');
+      }
+    }
+    e.target.value = '';
+  };
+
+  const removeAttachment = (index) => {
+    setPendingAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
   const constructDynamicContext = () => {
     const recent = (positions || []).slice(0, 5).map(p => 
       `- ${p.ticker} | PnL: Rp ${p.pnl || 0} | Process: ${p.process_score} | Violation: ${p.is_violation ? p.violation_reason : 'None'}`
@@ -183,11 +214,14 @@ ${recent || 'No recent trades logged.'}
   };
 
   const handleSend = async () => {
-    if (!input.trim() || !apiKey) return;
+    if ((!input.trim() && pendingAttachments.length === 0) || !apiKey) return;
 
     const userMessage = input.trim();
+    const currentAttachments = [...pendingAttachments];
     setInput('');
-    const updatedMessages = [...messages, { role: 'user', content: userMessage }];
+    setPendingAttachments([]);
+    
+    const updatedMessages = [...messages, { role: 'user', content: userMessage, attachments: currentAttachments }];
     setMessages(updatedMessages);
     setIsLoading(true);
 
@@ -210,10 +244,28 @@ CRITICAL INSTRUCTION: Always append a JSON block at the very end of your respons
     // Windowing: Only send the last 30 messages to avoid context bloat
     const windowedMessages = updatedMessages.slice(-30);
 
-    const apiMessages = windowedMessages.map(m => ({
-      role: m.role === 'model' ? 'model' : 'user',
-      parts: [{ text: m.content }]
-    }));
+    const apiMessages = windowedMessages.map(m => {
+      const parts = [];
+      if (m.content) parts.push({ text: m.content });
+      if (m.attachments && m.attachments.length > 0) {
+        m.attachments.forEach(att => {
+          parts.push({
+            inlineData: {
+              mimeType: att.mimeType,
+              data: att.data
+            }
+          });
+        });
+      }
+      // If there's an attachment but no text, Gemini requires at least some text context sometimes, but inlineData alone usually works.
+      // Just to be safe, if parts is empty, add a placeholder.
+      if (parts.length === 0) parts.push({ text: "Attached file." });
+      
+      return {
+        role: m.role === 'model' ? 'model' : 'user',
+        parts: parts
+      };
+    });
 
     const payload = {
       systemInstruction: { parts: [{ text: fullSystemInstruction }] },
@@ -438,6 +490,31 @@ CRITICAL INSTRUCTION: Always append a JSON block at the very end of your respons
                       {msg.content}
                     </ReactMarkdown>
 
+                    {/* Display Attachments in Chat History */}
+                    {msg.attachments && msg.attachments.length > 0 && (
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: msg.content ? '8px' : '0' }}>
+                        {msg.attachments.map((att, i) => (
+                          <div key={i} style={{ 
+                            position: 'relative', 
+                            borderRadius: '8px', 
+                            overflow: 'hidden', 
+                            border: '1px solid var(--border)',
+                            background: 'var(--bg-secondary)',
+                            width: 'fit-content'
+                          }}>
+                            {att.mimeType.startsWith('image/') ? (
+                              <img src={att.url} alt="Attachment" style={{ display: 'block', maxHeight: '150px', maxWidth: '200px', objectFit: 'contain' }} />
+                            ) : (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', fontSize: '13px' }}>
+                                <FileText size={20} color="var(--danger)" />
+                                <span style={{ maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{att.name}</span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     {msg.role === 'model' && msg.content && !msg.content.startsWith('API Error') && (
                       <div className="ai-message-feedback" style={{ display: 'flex', gap: 12, marginTop: 12, justifyContent: 'flex-end' }}>
                          <button 
@@ -479,18 +556,59 @@ CRITICAL INSTRUCTION: Always append a JSON block at the very end of your respons
                 ))}
               </div>
               
-              <div className="ai-input-wrapper">
+              {pendingAttachments.length > 0 && (
+                <div style={{ display: 'flex', gap: '8px', padding: '0 16px 8px', overflowX: 'auto' }}>
+                  {pendingAttachments.map((att, i) => (
+                    <div key={i} style={{ position: 'relative', flexShrink: 0, border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', background: 'var(--bg-secondary)' }}>
+                      <button 
+                        onClick={() => removeAttachment(i)}
+                        style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10 }}
+                      >
+                        <X size={12} />
+                      </button>
+                      {att.mimeType.startsWith('image/') ? (
+                        <img src={att.url} alt="Pending" style={{ height: '60px', width: 'auto', display: 'block' }} />
+                      ) : (
+                        <div style={{ height: '60px', width: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '10px', padding: '4px' }}>
+                          <FileText size={20} color="var(--danger)" style={{ marginBottom: '4px' }} />
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center' }}>PDF</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              <div className="ai-input-wrapper" style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
+                <input 
+                  type="file" 
+                  multiple 
+                  ref={fileInputRef} 
+                  style={{ display: 'none' }} 
+                  accept="image/*,application/pdf"
+                  onChange={handleFileSelect}
+                />
+                <button 
+                  className="ai-coach-btn" 
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{ marginBottom: '6px', opacity: 0.7 }}
+                  title="Attach Image or PDF"
+                >
+                  <Paperclip size={20} />
+                </button>
                 <textarea 
                   placeholder="Ask your coach..."
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   disabled={isLoading}
+                  style={{ flex: 1 }}
                 />
                 <button 
                   className="ai-send-btn" 
                   onClick={handleSend}
-                  disabled={!input.trim() || isLoading}
+                  disabled={(!input.trim() && pendingAttachments.length === 0) || isLoading}
+                  style={{ marginBottom: '6px' }}
                 >
                   <Send size={18} />
                 </button>
