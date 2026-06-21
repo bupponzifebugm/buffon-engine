@@ -97,33 +97,40 @@ export default function NeuronVisualizer({ jarEntries }) {
           graphData={graphData}
           nodeRelSize={1}
           nodeCanvasObject={(node, ctx, globalScale) => {
-            // Glow effect
-            ctx.beginPath();
-            ctx.arc(node.x, node.y, node.val + 2, 0, 2 * Math.PI, false);
-            ctx.fillStyle = `rgba(${node.isCore ? '204, 120, 92' : '255, 107, 53'}, 0.3)`;
-            ctx.fill();
+            try {
+              if (node.x === undefined || node.y === undefined) return;
 
-            // Core dot
-            ctx.beginPath();
-            ctx.arc(node.x, node.y, node.val, 0, 2 * Math.PI, false);
-            ctx.fillStyle = node.color;
-            ctx.fill();
-            
-            // Draw text
-            const fontSize = Math.max(3, 12 / globalScale);
-            ctx.font = `${fontSize}px Inter, Sans-Serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#ffffff';
-            
-            if (node.isCore) {
-              ctx.fillText("CORE", node.x, node.y + node.val + 8);
-            } else if (globalScale > 1.2) {
-              ctx.fillText(node.ticker, node.x, node.y + node.val + 6);
+              // Glow effect
+              ctx.beginPath();
+              ctx.arc(node.x, node.y, (node.val || 4) + 2, 0, 2 * Math.PI, false);
+              ctx.fillStyle = `rgba(${node.isCore ? '204, 120, 92' : '255, 107, 53'}, 0.3)`;
+              ctx.fill();
+
+              // Core dot
+              ctx.beginPath();
+              ctx.arc(node.x, node.y, node.val || 4, 0, 2 * Math.PI, false);
+              ctx.fillStyle = node.color || '#ff6b35';
+              ctx.fill();
+              
+              // Draw text - Guard against globalScale being 0 causing Infinity
+              const scale = Math.max(0.01, globalScale);
+              const fontSize = Math.min(60, Math.max(3, 12 / scale));
+              ctx.font = `${fontSize}px Inter, Sans-Serif`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillStyle = '#ffffff';
+              
+              if (node.isCore) {
+                ctx.fillText("CORE", node.x, node.y + (node.val || 4) + 8);
+              } else if (scale > 1.2 && node.ticker) {
+                ctx.fillText(node.ticker, node.x, node.y + (node.val || 4) + 6);
+              }
+            } catch (err) {
+              // ignore
             }
           }}
           linkColor={() => 'rgba(204, 120, 92, 0.4)'}
-          linkWidth={link => link.target.id === 'CORE' ? 2 : 1}
+          linkWidth={link => (link.target && link.target.id === 'CORE') ? 2 : 1}
           backgroundColor="#0D0D0D"
           d3VelocityDecay={0.1}
           cooldownTicks={100}
