@@ -29,6 +29,11 @@ export default function TradingCoach({
   const [activeChatId, setActiveChatId] = useState(generateId());
   const [showHistory, setShowHistory] = useState(false);
 
+  // Categorization
+  const CATEGORIES = ['Uncategorized', 'Psychology', 'Decision Making', 'Studying'];
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState('All');
+  const [currentCategory, setCurrentCategory] = useState('Uncategorized');
+
   // Resizer state
   const [drawerWidth, setDrawerWidth] = useState(() => parseInt(localStorage.getItem('buffon_coach_width')) || 450);
   const isResizing = useRef(false);
@@ -133,13 +138,23 @@ export default function TradingCoach({
     setActiveChatId(generateId());
     setMessages(defaultMessages);
     setShowHistory(false);
+    setCurrentCategory('Uncategorized');
     setDynamicChips(['Should I trade right now?', 'Review my psychology', 'Remind me of sizing rules']);
   };
 
   const handleLoadChat = (conv) => {
     setActiveChatId(conv.id);
     setMessages(conv.messages);
+    setCurrentCategory(conv.category || 'Uncategorized');
     setShowHistory(false);
+  };
+
+  const handleCategoryChange = (e) => {
+    const newCat = e.target.value;
+    setCurrentCategory(newCat);
+    setConversations(prev => prev.map(c => 
+      c.id === activeChatId ? { ...c, category: newCat } : c
+    ));
   };
 
   const handleFileSelect = (e) => {
@@ -332,13 +347,14 @@ CRITICAL INSTRUCTION: Always append a JSON block at the very end of your respons
         setConversations(prev => {
           const existing = prev.find(c => c.id === activeChatId);
           if (existing) {
-            return prev.map(c => c.id === activeChatId ? { ...c, messages: finalMessages, updatedAt: new Date().toISOString() } : c);
+            return prev.map(c => c.id === activeChatId ? { ...c, messages: finalMessages, updatedAt: new Date().toISOString(), category: currentCategory } : c);
           } else {
             return [{
               id: activeChatId,
               title: userMessage.substring(0, 30) + (userMessage.length > 30 ? '...' : ''),
               messages: finalMessages,
-              updatedAt: new Date().toISOString()
+              updatedAt: new Date().toISOString(),
+              category: currentCategory
             }, ...prev];
           }
         });
@@ -380,6 +396,17 @@ CRITICAL INSTRUCTION: Always append a JSON block at the very end of your respons
               <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: apiKey ? 'var(--success)' : 'var(--warning)', display: 'inline-block' }}></span>
               {apiKey ? 'Active' : 'Setup Required'}
             </div>
+            {!isConfiguring && (
+              <select 
+                value={currentCategory} 
+                onChange={handleCategoryChange}
+                className="ai-category-select"
+              >
+                {CATEGORIES.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="ai-coach-actions">
             {!isConfiguring && (
@@ -413,20 +440,34 @@ CRITICAL INSTRUCTION: Always append a JSON block at the very end of your respons
               <Plus size={16} style={{ marginRight: 4 }} /> New Chat
             </button>
           </div>
+          <div className="ai-history-filters">
+            {['All', ...CATEGORIES].map(cat => (
+              <button 
+                key={cat} 
+                className={`ai-filter-pill ${activeCategoryFilter === cat ? 'active' : ''}`}
+                onClick={() => setActiveCategoryFilter(cat)}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
           <div className="ai-history-list">
-            {conversations.length === 0 ? (
+            {conversations.filter(c => activeCategoryFilter === 'All' || (c.category || 'Uncategorized') === activeCategoryFilter).length === 0 ? (
               <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-secondary)', fontSize: 13 }}>
-                No past conversations.
+                No past conversations in this category.
               </div>
             ) : (
-              conversations.map(conv => (
+              conversations
+                .filter(c => activeCategoryFilter === 'All' || (c.category || 'Uncategorized') === activeCategoryFilter)
+                .map(conv => (
                 <div 
                   key={conv.id} 
                   className={`ai-history-item ${activeChatId === conv.id ? 'active' : ''}`}
                   onClick={() => handleLoadChat(conv)}
                 >
-                  <div className="ai-history-item-date">
-                    {new Date(conv.updatedAt).toLocaleDateString()} {new Date(conv.updatedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                  <div className="ai-history-item-date" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>{new Date(conv.updatedAt).toLocaleDateString()} {new Date(conv.updatedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    <span className="ai-history-item-badge">{conv.category || 'Uncategorized'}</span>
                   </div>
                   <div className="ai-history-item-preview">
                     {conv.title}
