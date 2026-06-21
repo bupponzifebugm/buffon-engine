@@ -71,6 +71,7 @@ export const TIER_ORDER = ['survival_10m', 'step1_15m', 'step2_20m', 'full_25m']
 
 // ─── DAILY QUOTES ───
 export const DAILY_QUOTES = [
+  // Original 21 Quotes
   { text: "Cut loss is love.", author: "Buffon's Trading Psychology Rule #8" },
   { text: "Follow the system, but loss is still a win.", author: "Buffon's Trading Psychology Rule #2" },
   { text: "No entering at peak. Do not move stop loss.", author: "Buffon's Trading Psychology Rules #5 & #7" },
@@ -92,6 +93,8 @@ export const DAILY_QUOTES = [
   { text: "Discipline in your life translates directly to discipline in your trading.", author: "Buffon's Trading Psychology Rule #4" },
   { text: "Let your winners run, but trail your stop to protect your capital.", author: "System Mandate" },
   { text: "2-3% profit is more than enough on gap downs or red days.", author: "Buffon's Rule #6" },
+
+  // Q2 Context & Mentors (16 quotes)
   { text: "Ambil yang ada, jangan serakah.", author: "Hengky Adinata" },
   { text: "Percuma hafal pola candlestick kalau nggak tau siapa BROKERNYA di balik layar.", author: "Hengky Adinata" },
   { text: "Understand the owner, understand the stock.", author: "Andry Hakim" },
@@ -107,7 +110,62 @@ export const DAILY_QUOTES = [
   { text: "The system already wins if executed. The only variable that breaks it is YOU ignoring the rules.", author: "Buffon's Journal" },
   { text: "Process beats outcomes. Bad process + win = most dangerous outcome.", author: "Trading Wisdom" },
   { text: "He did 10 years. You are just starting. Not even 10% of his dedication.", author: "Timothy Ronald" },
-  { text: "If the SMT is out, and the Bandar is out, just go out. What are you waiting for?", author: "Buffon's Rule" }
+  { text: "If the SMT is out, and the Bandar is out, just go out. What are you waiting for?", author: "Buffon's Rule" },
+
+  // New Legendary Quotes to reach 90
+  { text: "It's not whether you're right or wrong, but how much money you make when you're right and how much you lose when you're wrong.", author: "George Soros" },
+  { text: "Do not anticipate and move without market confirmation—being a little late in your trade is your insurance that you are right or wrong.", author: "Jesse Livermore" },
+  { text: "I just wait until there is money lying in the corner, and all I have to do is go over there and pick it up.", author: "Jim Rogers" },
+  { text: "In trading, the impossible happens about twice a year.", author: "Henri Fayol" },
+  { text: "You have to learn how to lose; it is more important than learning how to win.", author: "Mark Douglas" },
+  { text: "The elements of good trading are: 1. Cutting losses, 2. Cutting losses, and 3. Cutting losses.", author: "Ed Seykota" },
+  { text: "Win or lose, everybody gets what they want out of the market. Some people seem to like to lose, so they win by losing money.", author: "Ed Seykota" },
+  { text: "I always define my risk, and I don't have to worry about it.", author: "Tony Saliba" },
+  { text: "Novice Traders trade 5 to 10 times too big. They are taking 5 to 10 percent risk on a trade they should be taking 1 to 2 percent risk on.", author: "Bruce Kovner" },
+  { text: "Don't focus on making money, focus on protecting what you have.", author: "Paul Tudor Jones" },
+  { text: "Dangers of watching every tick are twofold: overtrading and increased chances of prematurely liquidating good positions.", author: "Jack Schwager" },
+  { text: "It takes 20 years to build a reputation and 5 minutes to ruin it. If you think about that, you'll do things differently.", author: "Warren Buffett" },
+  { text: "Risk comes from not knowing what you're doing.", author: "Warren Buffett" },
+  { text: "Bulls make money, bears make money, pigs get slaughtered.", author: "Wall Street Proverb" },
+  { text: "The trend is your friend until the end when it bends.", author: "Ed Seykota" },
+  { text: "Markets can remain irrational longer than you can remain solvent.", author: "John Maynard Keynes" },
+  { text: "Patterns don't work 100% of the time. But they are still critical because they help you define your risk.", author: "Paul Tudor Jones" },
+  { text: "If a speculator is correct half of the time, he is hitting a good average.", author: "Bernard Baruch" },
+  { text: "I have two basic rules about winning in trading as well as in life: 1. If you don't bet, you can't win. 2. If you lose all your chips, you can't bet.", author: "Larry Hite" },
+  { text: "There is nothing new in Wall Street. There can't be because speculation is as old as the hills.", author: "Jesse Livermore" },
+  { text: "Money is made by sitting, not trading.", author: "Jesse Livermore" },
+  { text: "The biggest risk of all is not taking one.", author: "Mellody Hobson" },
+  { text: "Hope is a bogus emotion that only costs you money.", author: "Jim Cramer" },
+  { text: "An investment in knowledge pays the best interest.", author: "Benjamin Franklin" },
+  { text: "Do not be embarrassed by your failures, learn from them and start again.", author: "Richard Branson" },
+  { text: "Price is what you pay. Value is what you get.", author: "Warren Buffett" },
+  { text: "Are you here to follow the system or donate money to the market today?", author: "Buffon AI" },
+  { text: "Cash is a position. Your envy is not a trade setup.", author: "Buffon's Q2 Journal" },
+  { text: "When you are in a drawdown, the goal is not to make it all back in one trade. The goal is to execute the next trade perfectly.", author: "Trading Wisdom" },
+  { text: "The market does not owe you recovery.", author: "Buffon's Trading Psychology" },
+  { text: "You have power over your mind - not outside events. Realize this, and you will find strength.", author: "Marcus Aurelius" },
+  { text: "We suffer more often in imagination than in reality.", author: "Seneca" },
+  { text: "First say to yourself what you would be; and then do what you have to do.", author: "Epictetus" },
+  { text: "There is only one way to happiness and that is to cease worrying about things which are beyond the power of our will.", author: "Epictetus" },
+  { text: "The impediment to action advances action. What stands in the way becomes the way.", author: "Marcus Aurelius" },
+  { text: "A rational person can find peace by cultivating indifference to things outside of their control.", author: "Naval Ravikant" },
+  { text: "The hard way is the easy way.", author: "Trading Wisdom" },
+  { text: "Patience. Menunggu adalah bagian dari strategi, bukan kelemahan.", author: "Kalimasada" },
+  { text: "Jika you mad at yourself, it's gonna lower your mental state.", author: "Kalimasada" },
+  { text: "Yang penting jangan margin. Itu first thing first.", author: "Hengky Adinata" },
+  { text: "The market is bigger than any trader. Do not stand in front of a moving train. Step aside.", author: "Hengky Adinata" },
+  { text: "One legendary trade does not make a career. 1,000 disciplined trades do.", author: "Trading Wisdom" },
+  { text: "If the macro is red, ALL trade plans are canceled. Everything to Cuankus.", author: "Buffon's Macro Rule" },
+  { text: "Drawdowns are the cost of being in the game.", author: "Buffon's Q2 Lessons" },
+  { text: "Overfitting is the enemy — past-tuned strategy ≠ future predictive power.", author: "Buffon's Q2 Lessons" },
+  { text: "Edges decay — always adapt and find new ones.", author: "Buffon's Q2 Lessons" },
+  { text: "Deployed beats a beautiful backtest — get it live.", author: "Buffon's Q2 Lessons" },
+  { text: "Explain your edge in 5 minutes. Why does it make money? Who is on the other side losing?", author: "Buffon's Q2 Lessons" },
+  { text: "Trading takes 3-4 years to know if you're any good — reset expectations.", author: "Buffon's Q2 Lessons" },
+  { text: "A marginal trader is always improving.", author: "Buffon's Q2 Lessons" },
+  { text: "Automate earlier than you think you should.", author: "Buffon's Q2 Lessons" },
+  { text: "There are no shortcuts, only reps. Put in the reps.", author: "Trading Wisdom" },
+  { text: "Ikuti smart money masuk saat akumulasi. Keluar saat distribusi. Jangan jadi cuci piring.", author: "Hengky Adinata" }
 ];
 
 // ─── STATUS CONFIGS ───
