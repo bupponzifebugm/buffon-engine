@@ -92,6 +92,22 @@ export const DAILY_QUOTES = [
   { text: "Discipline in your life translates directly to discipline in your trading.", author: "Buffon's Trading Psychology Rule #4" },
   { text: "Let your winners run, but trail your stop to protect your capital.", author: "System Mandate" },
   { text: "2-3% profit is more than enough on gap downs or red days.", author: "Buffon's Rule #6" },
+  { text: "Ambil yang ada, jangan serakah.", author: "Hengky Adinata" },
+  { text: "Percuma hafal pola candlestick kalau nggak tau siapa BROKERNYA di balik layar.", author: "Hengky Adinata" },
+  { text: "Understand the owner, understand the stock.", author: "Andry Hakim" },
+  { text: "He who knows when to fight and when not to fight, will be victorious.", author: "Sun Tzu" },
+  { text: "Trading is a research game. You are a researcher who occasionally hits a button.", author: "Buffon's Trading Journal" },
+  { text: "Comfort and returns are inversely related — discomfort = high return potential.", author: "Trading Wisdom" },
+  { text: "Position size kills more accounts than bad entries. Max 1-2% risk per trade.", author: "System Mandate" },
+  { text: "A losing streak is not a signal to trade more aggressively. It's a signal to trade less or not at all.", author: "Trading Wisdom" },
+  { text: "Sometimes, no trade is the best trade.", author: "Trading Wisdom" },
+  { text: "Your best trades happen when your mind is clear, not when you're desperate to recover.", author: "Trading Psychology" },
+  { text: "Bid at the bottom is a superpower — don't abandon it to noise.", author: "Hengky Adinata" },
+  { text: "Daripada maksa trading lalu sumbang donasi ke market, mending jalan-jalan santai.", author: "Hengky Adinata" },
+  { text: "The system already wins if executed. The only variable that breaks it is YOU ignoring the rules.", author: "Buffon's Journal" },
+  { text: "Process beats outcomes. Bad process + win = most dangerous outcome.", author: "Trading Wisdom" },
+  { text: "He did 10 years. You are just starting. Not even 10% of his dedication.", author: "Timothy Ronald" },
+  { text: "If the SMT is out, and the Bandar is out, just go out. What are you waiting for?", author: "Buffon's Rule" }
 ];
 
 // ─── STATUS CONFIGS ───
