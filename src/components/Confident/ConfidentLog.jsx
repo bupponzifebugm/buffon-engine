@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Plus, X, Trash2, Edit2, Star, GripVertical, Image as ImageIcon, Folder, ChevronLeft, PlayCircle } from 'lucide-react';
 import { fmtRp } from '../../lib/utils';
 import StoryViewer from '../Cards/StoryViewer';
+import NeuronVisualizer from './NeuronVisualizer';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -706,6 +707,8 @@ export default function ConfidentLog({ receipts, onAddReceipt, onDeleteReceipt, 
           </>
         )}
       </div>
+
+      <NeuronVisualizer jarEntries={jarEntries} />
       
       {/* Hidden file input */}
       <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} />
