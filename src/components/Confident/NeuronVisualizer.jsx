@@ -6,15 +6,8 @@ export default function NeuronVisualizer({ jarEntries }) {
   const [dimensions, setDimensions] = useState({ width: 800, height: 400 });
 
   useEffect(() => {
-    if (containerRef.current) {
-      setDimensions({
-        width: containerRef.current.clientWidth,
-        height: 400
-      });
-    }
-
-    const handleResize = () => {
-      if (containerRef.current) {
+    const updateSize = () => {
+      if (containerRef.current && containerRef.current.clientWidth > 0) {
         setDimensions({
           width: containerRef.current.clientWidth,
           height: 400
@@ -22,6 +15,10 @@ export default function NeuronVisualizer({ jarEntries }) {
       }
     };
 
+    // Initial delay to let CSS layout finish
+    setTimeout(updateSize, 100);
+    
+    const handleResize = () => updateSize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
