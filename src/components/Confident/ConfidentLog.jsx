@@ -403,8 +403,8 @@ export default function ConfidentLog({ receipts, onAddReceipt, onDeleteReceipt, 
               </div>
             </div>
 
-            {/* Labels outside the jar */}
-            {jarEntries.slice(0, 8).map((entry, idx) => {
+            {/* Labels outside the jar - Top 8 Biggest Wins */}
+            {[...jarEntries].sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount)).slice(0, 8).map((entry, idx) => {
               const topPos = 30 + (idx * 25);
               const isLeft = idx % 2 === 0;
               return (
