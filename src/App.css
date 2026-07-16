@@ -520,11 +520,18 @@
 .input-group {
   display: flex;
   gap: 8px;
+  width: 100%;
 }
 
 .input-group input:first-child {
-  width: 80px;
+  width: 64px;
   text-align: center;
+  flex-shrink: 0;
+}
+
+.input-group input:last-child {
+  flex: 1;
+  min-width: 0;
 }
 
 /* ── Result Boxes ────────────────────────────────────────── */

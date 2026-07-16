@@ -152,6 +152,8 @@ export default function SizingCalculator({
     };
   }, [dcaCapital, dcaSl, dcaTp, dcaDps, dcaPrices]);
 
+  const [includeFees, setIncludeFees] = useState(true);
+
   // Results
   const [results, setResults] = useState(null);
   const [alertInfo, setAlertInfo] = useState(null);
@@ -249,6 +251,9 @@ export default function SizingCalculator({
       return;
     }
 
+    const BUY_FEE = 0.0015;
+    const SELL_FEE = 0.0025;
+
     let remainingRiskBudget = cap * (currentRisk / 100);
     const maxPosValue = cap * maxCapPct;
     let existingPosValue = 0;
@@ -256,10 +261,17 @@ export default function SizingCalculator({
     const extShares = (parseFloat(existingLots) || 0) * 100;
     const extEntry = parseFloat(existingEntry) || 0;
 
+    const newLossPerShare = includeFees
+      ? (e * (1 + BUY_FEE) - s * (1 - SELL_FEE))
+      : (e - s);
+
     if (calcMode === 'add') {
       existingPosValue = extShares * extEntry;
-      // Existing risk based on NEW SL
-      existingRisk = extShares * (extEntry - s);
+      if (includeFees) {
+        existingRisk = extShares * (extEntry * (1 + BUY_FEE) - s * (1 - SELL_FEE));
+      } else {
+        existingRisk = extShares * (extEntry - s);
+      }
       remainingRiskBudget -= existingRisk;
     }
 
@@ -268,7 +280,7 @@ export default function SizingCalculator({
 
     let rawShares = 0;
     if (remainingRiskBudget > 0) {
-      rawShares = remainingRiskBudget / diff;
+      rawShares = remainingRiskBudget / newLossPerShare;
     }
 
     const posValUncapped = Math.floor(rawShares / 100) * 100 * e;
@@ -285,7 +297,6 @@ export default function SizingCalculator({
     if (t2 > e && s < e) rr = ((t2 - e) / diff).toFixed(2) + ':1';
 
     let totalShares = cappedShares;
-    let totalMaxLoss = cappedShares * diff;
     let totalPosVal = finalNewPosVal;
     let avgPrice = e;
 
@@ -295,8 +306,16 @@ export default function SizingCalculator({
       if (totalShares > 0) {
         avgPrice = totalPosVal / totalShares;
       }
-      totalMaxLoss = (cappedShares * (e - s)) + existingRisk;
     }
+
+    // Calculate Gross vs Net
+    const grossLoss = (cappedShares * (e - s)) + (calcMode === 'add' ? extShares * (extEntry - s) : 0);
+    const newBuyFee = cappedShares * e * BUY_FEE;
+    const exitSellFee = totalShares * s * SELL_FEE;
+    const totalFees = newBuyFee + exitSellFee;
+    const netLoss = grossLoss + totalFees;
+
+    const totalMaxLoss = includeFees ? netLoss : grossLoss;
 
     const t1Shares = Math.floor(totalShares * 0.40 / 100) * 100;
     const t2Shares = t1Shares;
@@ -304,6 +323,8 @@ export default function SizingCalculator({
 
     const calculatedResults = {
       maxLoss: totalMaxLoss,
+      grossLoss,
+      totalFees,
       shares: totalShares,
       lots: cappedShares / 100, // Show the amount of new lots to add!
       totalLots: totalShares / 100,
@@ -437,6 +458,19 @@ export default function SizingCalculator({
             </div>
           </div>
 
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', background: 'var(--bg-secondary)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)' }}>
+            <input 
+              type="checkbox" 
+              id="include-fees" 
+              checked={includeFees} 
+              onChange={e => setIncludeFees(e.target.checked)} 
+              style={{ width: 'auto', cursor: 'pointer', margin: 0 }}
+            />
+            <label htmlFor="include-fees" style={{ fontSize: '11px', color: 'var(--text-secondary)', cursor: 'pointer', margin: 0, fontWeight: 'bold' }}>
+              Hitung Biaya Transaksi (Beli: 0.15%, Jual: 0.25%)
+            </label>
+          </div>
+
           <div className="field-row">
             <div className="field">
               <label>Ticker</label>
@@ -552,7 +586,10 @@ export default function SizingCalculator({
                   <div className="result-label">Total Max Rugi</div>
                   <div className="result-val">{fmtRp(results.maxLoss)}</div>
                   <div className="result-sub">
-                    {(parseFloat(customRiskPct) || 0).toFixed(2)}% Modal 
+                    {includeFees 
+                      ? `Net loss (Termasuk fee Rp ${fmt(results.totalFees)})`
+                      : `Gross loss (Belum termasuk fee)`
+                    }
                   </div>
                 </div>
                 <div className="result-box success">
