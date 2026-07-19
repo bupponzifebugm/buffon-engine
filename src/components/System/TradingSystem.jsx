@@ -103,6 +103,49 @@ export default function TradingSystem() {
           </div>
         </div>
 
+        {/* SVG Skill Tree Path network */}
+        <svg viewBox="0 0 600 40" className="skill-tree-network-svg" style={{ width: '100%', height: '40px' }}>
+          {/* Path 1: Pre-Flight (Left) */}
+          <path
+            d="M 300 0 L 300 15 L 100 15 L 100 40"
+            fill="none"
+            stroke={isPreFlightComplete ? 'var(--success)' : 'var(--border)'}
+            strokeWidth="3"
+            style={{
+              transition: 'stroke 0.4s, filter 0.4s',
+              filter: isPreFlightComplete ? 'drop-shadow(0 0 5px var(--success))' : 'none'
+            }}
+          />
+          {/* Path 2: Selection (Center) */}
+          <path
+            d="M 300 0 L 300 40"
+            fill="none"
+            stroke={isSelectionComplete ? 'var(--success)' : 'var(--border)'}
+            strokeWidth="3"
+            style={{
+              transition: 'stroke 0.4s, filter 0.4s',
+              filter: isSelectionComplete ? 'drop-shadow(0 0 5px var(--success))' : 'none'
+            }}
+          />
+          {/* Path 3: Execution (Right) */}
+          <path
+            d="M 300 0 L 300 15 L 500 15 L 500 40"
+            fill="none"
+            stroke={isExecutionComplete ? 'var(--success)' : 'var(--border)'}
+            strokeWidth="3"
+            style={{
+              transition: 'stroke 0.4s, filter 0.4s',
+              filter: isExecutionComplete ? 'drop-shadow(0 0 5px var(--success))' : 'none'
+            }}
+          />
+
+          {/* Node dot glow emitters */}
+          <circle cx="300" cy="0" r="5" fill={allChecked ? 'var(--success)' : 'var(--border)'} style={{ transition: 'fill 0.4s' }} />
+          <circle cx="100" cy="40" r="4" fill={isPreFlightComplete ? 'var(--success)' : 'var(--border)'} style={{ transition: 'fill 0.4s' }} />
+          <circle cx="300" cy="40" r="4" fill={isSelectionComplete ? 'var(--success)' : 'var(--border)'} style={{ transition: 'fill 0.4s' }} />
+          <circle cx="500" cy="40" r="4" fill={isExecutionComplete ? 'var(--success)' : 'var(--border)'} style={{ transition: 'fill 0.4s' }} />
+        </svg>
+
         {/* The 3 Branches Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
           {/* Branch 1: Pre-Flight */}

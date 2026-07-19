@@ -2038,3 +2038,36 @@ ul.system-list b {
   background: var(--border-strong);
   border-radius: 2px;
 }
+
+/* Grounding Banner Glowing Border Animation */
+.grounding-wisdom-banner {
+  animation: breathingBorder 4s infinite ease-in-out;
+  transition: all 0.3s;
+}
+
+@keyframes breathingBorder {
+  0% {
+    border-color: var(--accent);
+    box-shadow: 0 4px 12px rgba(224, 147, 111, 0.15), 0 0 8px rgba(224, 147, 111, 0.05);
+  }
+  50% {
+    border-color: var(--purple);
+    box-shadow: 0 4px 20px rgba(154, 132, 184, 0.25), 0 0 12px rgba(154, 132, 184, 0.1);
+  }
+  100% {
+    border-color: var(--accent);
+    box-shadow: 0 4px 12px rgba(224, 147, 111, 0.15), 0 0 8px rgba(224, 147, 111, 0.05);
+  }
+}
+
+.skill-tree-network-svg {
+  display: block;
+  margin: -16px auto 16px auto;
+  transition: all 0.3s;
+}
+
+@media (max-width: 900px) {
+  .skill-tree-network-svg {
+    display: none !important;
+  }
+}
