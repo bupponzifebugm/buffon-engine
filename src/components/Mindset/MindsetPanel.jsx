@@ -9,6 +9,9 @@ export default function MindsetPanel({ profile, onUpdateProfile }) {
   const [flippedLessons, setFlippedLessons] = useState({});
   const [flippedPsychology, setFlippedPsychology] = useState({});
 
+  const [activeQuoteIdx, setActiveQuoteIdx] = useState(() => Math.floor(Math.random() * (MINDSET_QUOTES?.length || 1)));
+  const [isFading, setIsFading] = useState(false);
+
   // Form states for schedule
   const [newDay, setNewDay] = useState('1'); // Monday
   const [newStart, setNewStart] = useState('08:00');
@@ -96,6 +99,20 @@ export default function MindsetPanel({ profile, onUpdateProfile }) {
       ...prev,
       [num]: !prev[num]
     }));
+  }
+
+  function drawRandomQuote() {
+    setIsFading(true);
+    setTimeout(() => {
+      let nextIdx = activeQuoteIdx;
+      if (MINDSET_QUOTES.length > 1) {
+        while (nextIdx === activeQuoteIdx) {
+          nextIdx = Math.floor(Math.random() * MINDSET_QUOTES.length);
+        }
+      }
+      setActiveQuoteIdx(nextIdx);
+      setIsFading(false);
+    }, 200);
   }
 
   return (
@@ -401,19 +418,130 @@ export default function MindsetPanel({ profile, onUpdateProfile }) {
 
       {/* ── Section 4: Mindset Quotes ── */}
       <div className="card">
-        <div className="card-title">
-          <Quote size={16} />
-          Mindset Quotes
+        <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Quote size={16} style={{ color: 'var(--accent)' }} />
+            <span>Wisdom Card & Quotes</span>
+          </div>
+          <button 
+            className="btn"
+            onClick={drawRandomQuote}
+            style={{ 
+              margin: 0, 
+              padding: '4px 10px', 
+              fontSize: '11px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              background: 'var(--surface)', 
+              border: '1px solid var(--border)', 
+              color: 'var(--text-primary)', 
+              width: 'auto' 
+            }}
+          >
+            🔮 Draw Wisdom
+          </button>
         </div>
 
-        <div className="mindset-quotes">
-          {(MINDSET_QUOTES || []).map((quote, idx) => (
-            <div key={idx} className="mindset-quote">
-              <Sparkles size={14} className="quote-icon" />
-              <span className="mindset-quote-text">{quote}</span>
-            </div>
-          ))}
+        {/* Interactive Quote Board */}
+        <div style={{
+          position: 'relative',
+          padding: '24px',
+          background: 'var(--bg-secondary)',
+          border: '1px solid var(--border)',
+          borderRadius: '8px',
+          textAlign: 'center',
+          minHeight: '100px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          transition: 'all 0.3s',
+          marginTop: '12px'
+        }}>
+          {/* Large Quote Marks Icon */}
+          <div style={{
+            position: 'absolute',
+            top: '5px',
+            left: '12px',
+            fontSize: '48px',
+            fontFamily: 'serif',
+            color: 'var(--border-strong)',
+            opacity: 0.15,
+            lineHeight: 1,
+            pointerEvents: 'none'
+          }}>“</div>
+
+          <div style={{
+            opacity: isFading ? 0 : 1,
+            transition: 'opacity 0.2s ease-in-out',
+            fontSize: '14px',
+            fontWeight: '600',
+            lineHeight: '1.6',
+            color: 'var(--text-primary)',
+            padding: '0 20px',
+            fontStyle: 'italic'
+          }}>
+            {MINDSET_QUOTES[activeQuoteIdx]}
+          </div>
+
+          <div style={{
+            position: 'absolute',
+            bottom: '5px',
+            right: '12px',
+            fontSize: '48px',
+            fontFamily: 'serif',
+            color: 'var(--border-strong)',
+            opacity: 0.15,
+            lineHeight: 1,
+            pointerEvents: 'none'
+          }}>”</div>
         </div>
+
+        {/* Collapsible View All Quotes Section */}
+        <details style={{ marginTop: '14px' }}>
+          <summary style={{ 
+            fontSize: '11px', 
+            color: 'var(--text-secondary)', 
+            cursor: 'pointer', 
+            userSelect: 'none',
+            padding: '4px',
+            fontWeight: 'bold'
+          }}>
+            View All Quotes ({MINDSET_QUOTES.length})
+          </summary>
+          <div className="mindset-quotes" style={{ 
+            marginTop: '10px', 
+            maxHeight: '220px', 
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            paddingRight: '6px'
+          }}>
+            {(MINDSET_QUOTES || []).map((quote, idx) => (
+              <div key={idx} className="mindset-quote" style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '8px',
+                padding: '8px 12px',
+                background: 'var(--bg-primary)',
+                border: '1px solid var(--border)',
+                borderLeft: idx === activeQuoteIdx ? '3px solid var(--accent)' : '3px solid var(--border-strong)',
+                borderRadius: '4px',
+                fontSize: '12px',
+                transition: 'all 0.2s'
+              }}>
+                <Sparkles size={12} style={{ color: idx === activeQuoteIdx ? 'var(--accent)' : 'var(--text-secondary)', marginTop: '2px', flexShrink: 0 }} />
+                <span style={{ 
+                  color: idx === activeQuoteIdx ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  fontWeight: idx === activeQuoteIdx ? 'bold' : 'normal'
+                }}>{quote}</span>
+              </div>
+            ))}
+          </div>
+        </details>
       </div>
 
       {/* ── Section 5: Stockbit vs Ajaib Warning ── */}
