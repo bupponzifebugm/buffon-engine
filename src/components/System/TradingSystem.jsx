@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle, Circle, AlertTriangle, Bot, List } from 'lucide-react';
+import { CheckCircle, Circle, AlertTriangle, Bot, List, Zap, Shield, Layers } from 'lucide-react';
 import { DAILY_CHECKLIST, BOT_STACK_RULES } from '../../lib/constants';
 
 export default function TradingSystem() {
@@ -27,37 +27,176 @@ export default function TradingSystem() {
     });
   }
 
-  const checklistDone = checklistState.filter(Boolean).length;
+  const preFlightChecks = [
+    { idx: 0, label: DAILY_CHECKLIST[0] },
+    { idx: 1, label: DAILY_CHECKLIST[1] },
+    { idx: 2, label: DAILY_CHECKLIST[2] },
+    { idx: 3, label: DAILY_CHECKLIST[3] }
+  ];
+
+  const selectionChecks = [
+    { idx: 4, label: DAILY_CHECKLIST[4] },
+    { idx: 6, label: DAILY_CHECKLIST[6] },
+    { idx: 7, label: DAILY_CHECKLIST[7] }
+  ];
+
+  const executionChecks = [
+    { idx: 5, label: DAILY_CHECKLIST[5] },
+    { idx: 8, label: DAILY_CHECKLIST[8] },
+    { idx: 9, label: DAILY_CHECKLIST[9] }
+  ];
+
+  const isPreFlightComplete = checklistState[0] && checklistState[1] && checklistState[2] && checklistState[3];
+  const isSelectionComplete = checklistState[4] && checklistState[6] && checklistState[7];
+  const isExecutionComplete = checklistState[5] && checklistState[8] && checklistState[9];
+  const allChecked = isPreFlightComplete && isSelectionComplete && isExecutionComplete;
+
+  const getChecklistBtnStyle = (checked) => ({
+    display: 'flex',
+    alignItems: 'center',
+    width: '100%',
+    padding: '10px 12px',
+    background: checked ? 'rgba(52, 211, 153, 0.08)' : 'var(--bg-primary)',
+    border: '1px solid',
+    borderColor: checked ? 'var(--success)' : 'var(--border)',
+    borderRadius: '6px',
+    color: checked ? 'var(--text-primary)' : 'var(--text-secondary)',
+    cursor: 'pointer',
+    textAlign: 'left',
+    transition: 'all 0.2s',
+    outline: 'none',
+    boxSizing: 'border-box'
+  });
+
   const botDone = botCheckState.filter(Boolean).length;
 
   return (
     <div>
-      {/* ── 10-Step Daily Operating Checklist ── */}
-      <div className="card">
-        <div className="card-title">
-          <List size={16} style={{ color: 'var(--accent)' }} />
-          Daily Operating Checklist ({checklistDone}/{DAILY_CHECKLIST.length})
+      {/* ── RPG SYSTEM CHECKLIST SKILL TREE ── */}
+      <div className="card" style={{ marginBottom: 24, overflow: 'hidden' }}>
+        <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Zap size={16} style={{ color: 'var(--accent)' }} />
+          System Launch Status (RPG Skill Tree)
         </div>
-        {checklistDone === DAILY_CHECKLIST.length && (
-          <div className="checklist-complete">
-            ✓ All checks passed. You are cleared to trade.
+
+        {/* Central Engine indicator */}
+        <div style={{
+          textAlign: 'center',
+          padding: '20px',
+          background: 'var(--bg-secondary)',
+          borderRadius: '12px',
+          border: '1px solid var(--border)',
+          marginBottom: '24px',
+          boxShadow: allChecked ? '0 0 25px rgba(52, 211, 153, 0.25)' : 'none',
+          borderColor: allChecked ? 'var(--success)' : 'var(--border)',
+          transition: 'all 0.4s'
+        }}>
+          <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-secondary)' }}>Central Launch Indicator</div>
+          <div style={{
+            fontSize: '20px',
+            fontWeight: '900',
+            marginTop: '6px',
+            color: allChecked ? 'var(--success)' : 'var(--text-secondary)',
+            textShadow: allChecked ? '0 0 10px rgba(52, 211, 153, 0.4)' : 'none'
+          }}>
+            {allChecked ? '⚡ LAUNCH ENGINE READY' : '🔒 ENGINE LOCKOUT'}
           </div>
-        )}
-        <div className="checklist-grid">
-          {DAILY_CHECKLIST.map((item, i) => (
-            <button
-              key={i}
-              className={`checklist-item${checklistState[i] ? ' checked' : ''}`}
-              onClick={() => toggleChecklist(i)}
-            >
-              {checklistState[i]
-                ? <CheckCircle size={18} style={{ color: 'var(--success)', flexShrink: 0 }} />
-                : <Circle size={18} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
-              }
-              <span className="checklist-step">{i + 1}</span>
-              <span>{item}</span>
-            </button>
-          ))}
+        </div>
+
+        {/* The 3 Branches Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+          {/* Branch 1: Pre-Flight */}
+          <div style={{
+            padding: '16px',
+            background: isPreFlightComplete ? 'rgba(52, 211, 153, 0.03)' : 'var(--bg-secondary)',
+            border: '1px solid',
+            borderColor: isPreFlightComplete ? 'var(--success)' : 'var(--border)',
+            borderRadius: '10px',
+            boxShadow: isPreFlightComplete ? '0 0 15px rgba(52, 211, 153, 0.1)' : 'none',
+            transition: 'all 0.3s',
+            boxSizing: 'border-box'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <Shield size={16} style={{ color: isPreFlightComplete ? 'var(--success)' : 'var(--text-secondary)' }} />
+              <span style={{ fontWeight: 'bold', fontSize: '13px', color: isPreFlightComplete ? 'var(--success)' : 'var(--text-primary)' }}>1. PRE-FLIGHT PATH</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {preFlightChecks.map(item => (
+                <button
+                  key={item.idx}
+                  onClick={() => toggleChecklist(item.idx)}
+                  style={getChecklistBtnStyle(checklistState[item.idx])}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', background: checklistState[item.idx] ? 'rgba(52,211,153,0.1)' : 'rgba(255,255,255,0.05)', color: checklistState[item.idx] ? 'var(--success)' : 'var(--text-secondary)', fontSize: '10px', fontWeight: 'bold', marginRight: '6px', flexShrink: 0 }}>
+                    {checklistState[item.idx] ? '✓' : item.idx + 1}
+                  </span>
+                  <span style={{ textAlign: 'left', fontSize: '12px' }}>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Branch 2: Selection */}
+          <div style={{
+            padding: '16px',
+            background: isSelectionComplete ? 'rgba(52, 211, 153, 0.03)' : 'var(--bg-secondary)',
+            border: '1px solid',
+            borderColor: isSelectionComplete ? 'var(--success)' : 'var(--border)',
+            borderRadius: '10px',
+            boxShadow: isSelectionComplete ? '0 0 15px rgba(52, 211, 153, 0.1)' : 'none',
+            transition: 'all 0.3s',
+            boxSizing: 'border-box'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <Layers size={16} style={{ color: isSelectionComplete ? 'var(--success)' : 'var(--text-secondary)' }} />
+              <span style={{ fontWeight: 'bold', fontSize: '13px', color: isSelectionComplete ? 'var(--success)' : 'var(--text-primary)' }}>2. SELECTION PATH</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {selectionChecks.map(item => (
+                <button
+                  key={item.idx}
+                  onClick={() => toggleChecklist(item.idx)}
+                  style={getChecklistBtnStyle(checklistState[item.idx])}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', background: checklistState[item.idx] ? 'rgba(52,211,153,0.1)' : 'rgba(255,255,255,0.05)', color: checklistState[item.idx] ? 'var(--success)' : 'var(--text-secondary)', fontSize: '10px', fontWeight: 'bold', marginRight: '6px', flexShrink: 0 }}>
+                    {checklistState[item.idx] ? '✓' : item.idx + 1}
+                  </span>
+                  <span style={{ textAlign: 'left', fontSize: '12px' }}>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Branch 3: Execution */}
+          <div style={{
+            padding: '16px',
+            background: isExecutionComplete ? 'rgba(52, 211, 153, 0.03)' : 'var(--bg-secondary)',
+            border: '1px solid',
+            borderColor: isExecutionComplete ? 'var(--success)' : 'var(--border)',
+            borderRadius: '10px',
+            boxShadow: isExecutionComplete ? '0 0 15px rgba(52, 211, 153, 0.1)' : 'none',
+            transition: 'all 0.3s',
+            boxSizing: 'border-box'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <Zap size={16} style={{ color: isExecutionComplete ? 'var(--success)' : 'var(--text-secondary)' }} />
+              <span style={{ fontWeight: 'bold', fontSize: '13px', color: isExecutionComplete ? 'var(--success)' : 'var(--text-primary)' }}>3. EXECUTION PATH</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {executionChecks.map(item => (
+                <button
+                  key={item.idx}
+                  onClick={() => toggleChecklist(item.idx)}
+                  style={getChecklistBtnStyle(checklistState[item.idx])}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', background: checklistState[item.idx] ? 'rgba(52,211,153,0.1)' : 'rgba(255,255,255,0.05)', color: checklistState[item.idx] ? 'var(--success)' : 'var(--text-secondary)', fontSize: '10px', fontWeight: 'bold', marginRight: '6px', flexShrink: 0 }}>
+                    {checklistState[item.idx] ? '✓' : item.idx + 1}
+                  </span>
+                  <span style={{ textAlign: 'left', fontSize: '12px' }}>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
