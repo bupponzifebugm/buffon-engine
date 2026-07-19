@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Brain, BookOpen, Quote, ChevronDown, ChevronUp, Sparkles, Plus, Trash2, Calendar } from 'lucide-react';
-import { MINDSET_SHIFTS, THIRTEEN_LESSONS, MINDSET_QUOTES } from '../../lib/constants';
+import { Brain, BookOpen, Quote, ChevronDown, ChevronUp, Sparkles, Plus, Trash2, Calendar, Target } from 'lucide-react';
+import { MINDSET_SHIFTS, THIRTEEN_LESSONS, MINDSET_QUOTES, PSYCHOLOGY_LESSONS } from '../../lib/constants';
 import TiltBreaker from './TiltBreaker';
 
 export default function MindsetPanel({ profile, onUpdateProfile }) {
@@ -8,6 +8,7 @@ export default function MindsetPanel({ profile, onUpdateProfile }) {
   const [expandedCards, setExpandedCards] = useState({});
   // Track which lesson is open (only one at a time)
   const [openLesson, setOpenLesson] = useState(null);
+  const [openPsychologyLesson, setOpenPsychologyLesson] = useState(null);
 
   // Form states for schedule
   const [newDay, setNewDay] = useState('1'); // Monday
@@ -86,6 +87,10 @@ export default function MindsetPanel({ profile, onUpdateProfile }) {
 
   function toggleLesson(num) {
     setOpenLesson((prev) => (prev === num ? null : num));
+  }
+
+  function togglePsychologyLesson(num) {
+    setOpenPsychologyLesson((prev) => (prev === num ? null : num));
   }
 
   return (
@@ -272,6 +277,43 @@ export default function MindsetPanel({ profile, onUpdateProfile }) {
                 )}
               </div>
               {openLesson === lesson.number && (
+                <div className="lesson-body">
+                  <p>{lesson.description}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Section 3.5: 10 Fundamental Trading Psychology Lessons ── */}
+      <div className="card">
+        <div className="card-title">
+          <Target size={16} style={{ color: 'var(--accent)' }} />
+          10 Fundamental Trading Psychology Lessons
+        </div>
+
+        <div className="lessons-list">
+          {(PSYCHOLOGY_LESSONS || []).map((lesson) => (
+            <div
+              key={lesson.number}
+              className={`lesson-item ${openPsychologyLesson === lesson.number ? 'expanded' : ''}`}
+            >
+              <div
+                className="lesson-header"
+                onClick={() => togglePsychologyLesson(lesson.number)}
+              >
+                <div className="lesson-header-left">
+                  <span className="lesson-number" style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent)' }}>{lesson.number}</span>
+                  <span className="lesson-title">{lesson.title}</span>
+                </div>
+                {openPsychologyLesson === lesson.number ? (
+                  <ChevronUp size={16} />
+                ) : (
+                  <ChevronDown size={16} />
+                )}
+              </div>
+              {openPsychologyLesson === lesson.number && (
                 <div className="lesson-body">
                   <p>{lesson.description}</p>
                 </div>

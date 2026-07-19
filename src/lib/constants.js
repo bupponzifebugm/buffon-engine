@@ -589,3 +589,17 @@ export const GAMIFICATION_CONFIG = {
   XP_PER_CHECK: 10, // XP gained per process checkbox
   FIRST_WIN_BONUS: 10
 };
+
+// ─── 10 FUNDAMENTAL TRADING PSYCHOLOGY LESSONS ───
+export const PSYCHOLOGY_LESSONS = [
+  { number: 1, title: "ANYTHING CAN HAPPEN", description: "No strategy guarantees a 100% win rate; every trade is just one outcome in a series of probabilities." },
+  { number: 2, title: "THINK IN PROBABILITIES, NOT CERTAINTIES", description: "Successful traders don't try to predict every move but execute consistently and let statistics play out over many trades." },
+  { number: 3, title: "ACCEPT THE RISK BEFORE ENTERING", description: "You must be mentally and financially comfortable with a potential loss before placing a trade." },
+  { number: 4, title: "DETACH YOUR SELF-WORTH FROM INDIVIDUAL TRADES", description: "A losing trade does not define you as a bad trader, and your identity should not be tied to a single outcome." },
+  { number: 5, title: "CONSISTENCY COMES FROM MINDSET, NOT STRATEGY", description: "Discipline in executing a singular strategy is what creates consistent results, not the search for a 'perfect' strategy." },
+  { number: 6, title: "THE MARKET OWES YOU NOTHING", description: "The market is indifferent; you must take full responsibility for your actions rather than blaming the market to maintain control over your future." },
+  { number: 7, title: "ELIMINATE THE NEED TO BE RIGHT", description: "The desire to be 'right' every time leads to emotional mistakes like revenge trading or holding losers; focus on long-term profitability instead." },
+  { number: 8, title: "EVERY SINGLE TRADE IS UNIQUE", description: "Do not assume a setup will behave like the last one; each moment in the market is independent." },
+  { number: 9, title: "FOLLOW YOUR PROCESS WITHOUT HESITATION", description: "Once you have a strategy that provides an edge, you must execute it every time it presents itself without fear." },
+  { number: 10, title: "DEVELOP THE FIVE FUNDAMENTAL TRUTHS", description: "Internalize that anything can happen, you don't need to predict the future to make money, there is a random distribution of wins and losses, a strategy is just an edge, and every moment in the market is unique." }
+];
