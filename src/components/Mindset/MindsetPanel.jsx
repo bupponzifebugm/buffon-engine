@@ -6,9 +6,9 @@ import TiltBreaker from './TiltBreaker';
 export default function MindsetPanel({ profile, onUpdateProfile }) {
   // Track which mindset cards are expanded (multiple can be open)
   const [expandedCards, setExpandedCards] = useState({});
-  // Track which lesson is open (only one at a time)
-  const [openLesson, setOpenLesson] = useState(null);
-  const [openPsychologyLesson, setOpenPsychologyLesson] = useState(null);
+  // Track which lesson is flipped
+  const [flippedLessons, setFlippedLessons] = useState({});
+  const [flippedPsychology, setFlippedPsychology] = useState({});
 
   // Form states for schedule
   const [newDay, setNewDay] = useState('1'); // Monday
@@ -86,11 +86,17 @@ export default function MindsetPanel({ profile, onUpdateProfile }) {
   }
 
   function toggleLesson(num) {
-    setOpenLesson((prev) => (prev === num ? null : num));
+    setFlippedLessons((prev) => ({
+      ...prev,
+      [num]: !prev[num]
+    }));
   }
 
   function togglePsychologyLesson(num) {
-    setOpenPsychologyLesson((prev) => (prev === num ? null : num));
+    setFlippedPsychology((prev) => ({
+      ...prev,
+      [num]: !prev[num]
+    }));
   }
 
   return (
@@ -256,70 +262,112 @@ export default function MindsetPanel({ profile, onUpdateProfile }) {
           The 13 Lessons
         </div>
 
-        <div className="lessons-list">
-          {(THIRTEEN_LESSONS || []).map((lesson) => (
-            <div
-              key={lesson.number}
-              className={`lesson-item ${openLesson === lesson.number ? 'expanded' : ''}`}
-            >
-              <div
-                className="lesson-header"
+        <div className="mindset-cards-grid">
+          {(THIRTEEN_LESSONS || []).map((lesson) => {
+            const isFlipped = !!flippedLessons[lesson.number];
+            return (
+              <div 
+                key={lesson.number} 
+                className={`perspective-container ${isFlipped ? 'flipped' : ''}`}
                 onClick={() => toggleLesson(lesson.number)}
               >
-                <div className="lesson-header-left">
-                  <span className="lesson-number">{lesson.number}</span>
-                  <span className="lesson-title">{lesson.title}</span>
+                <div className="flip-card-inner">
+                  <div className="flip-card-front" style={{ borderLeft: '3px solid var(--accent)' }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      background: 'rgba(99, 102, 241, 0.1)',
+                      color: 'var(--accent)',
+                      fontWeight: 'bold',
+                      fontSize: '14px'
+                    }}>
+                      {lesson.number}
+                    </div>
+                    <div style={{ 
+                      fontSize: '11px', 
+                      fontWeight: '800', 
+                      textTransform: 'uppercase', 
+                      letterSpacing: '0.05em',
+                      color: 'var(--text-primary)',
+                      textAlign: 'center',
+                      lineHeight: '1.4'
+                    }}>
+                      {lesson.title}
+                    </div>
+                    <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Click to reveal ➜</span>
+                  </div>
+                  <div className="flip-card-back">
+                    <div style={{ fontWeight: 'bold', fontSize: '10px', color: 'var(--accent)', marginBottom: '4px', textTransform: 'uppercase' }}>
+                      Lesson {lesson.number}
+                    </div>
+                    <p style={{ margin: 0 }}>{lesson.description}</p>
+                  </div>
                 </div>
-                {openLesson === lesson.number ? (
-                  <ChevronUp size={16} />
-                ) : (
-                  <ChevronDown size={16} />
-                )}
               </div>
-              {openLesson === lesson.number && (
-                <div className="lesson-body">
-                  <p>{lesson.description}</p>
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
       {/* ── Section 3.5: 10 Fundamental Trading Psychology Lessons ── */}
       <div className="card">
         <div className="card-title">
-          <Target size={16} style={{ color: 'var(--accent)' }} />
+          <Target size={16} style={{ color: '#a855f7' }} />
           10 Fundamental Trading Psychology Lessons
         </div>
 
-        <div className="lessons-list">
-          {(PSYCHOLOGY_LESSONS || []).map((lesson) => (
-            <div
-              key={lesson.number}
-              className={`lesson-item ${openPsychologyLesson === lesson.number ? 'expanded' : ''}`}
-            >
-              <div
-                className="lesson-header"
+        <div className="mindset-cards-grid">
+          {(PSYCHOLOGY_LESSONS || []).map((lesson) => {
+            const isFlipped = !!flippedPsychology[lesson.number];
+            return (
+              <div 
+                key={lesson.number} 
+                className={`perspective-container ${isFlipped ? 'flipped' : ''}`}
                 onClick={() => togglePsychologyLesson(lesson.number)}
               >
-                <div className="lesson-header-left">
-                  <span className="lesson-number" style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent)' }}>{lesson.number}</span>
-                  <span className="lesson-title">{lesson.title}</span>
+                <div className="flip-card-inner">
+                  <div className="flip-card-front" style={{ borderLeft: '3px solid #a855f7' }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      background: 'rgba(168, 85, 247, 0.1)',
+                      color: '#a855f7',
+                      fontWeight: 'bold',
+                      fontSize: '14px'
+                    }}>
+                      {lesson.number}
+                    </div>
+                    <div style={{ 
+                      fontSize: '11px', 
+                      fontWeight: '800', 
+                      textTransform: 'uppercase', 
+                      letterSpacing: '0.05em',
+                      color: 'var(--text-primary)',
+                      textAlign: 'center',
+                      lineHeight: '1.4'
+                    }}>
+                      {lesson.title}
+                    </div>
+                    <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Click to reveal ➜</span>
+                  </div>
+                  <div className="flip-card-back" style={{ borderColor: '#a855f7' }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '10px', color: '#a855f7', marginBottom: '4px', textTransform: 'uppercase' }}>
+                      Truth {lesson.number}
+                    </div>
+                    <p style={{ margin: 0 }}>{lesson.description}</p>
+                  </div>
                 </div>
-                {openPsychologyLesson === lesson.number ? (
-                  <ChevronUp size={16} />
-                ) : (
-                  <ChevronDown size={16} />
-                )}
               </div>
-              {openPsychologyLesson === lesson.number && (
-                <div className="lesson-body">
-                  <p>{lesson.description}</p>
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
