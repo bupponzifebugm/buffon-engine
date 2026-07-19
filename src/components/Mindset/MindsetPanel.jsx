@@ -4,9 +4,8 @@ import { MINDSET_SHIFTS, THIRTEEN_LESSONS, MINDSET_QUOTES, PSYCHOLOGY_LESSONS } 
 import TiltBreaker from './TiltBreaker';
 
 export default function MindsetPanel({ profile, onUpdateProfile }) {
-  // Track which mindset cards are expanded (multiple can be open)
-  const [expandedCards, setExpandedCards] = useState({});
-  // Track which lesson is flipped
+  // Track which mindset cards are flipped
+  const [flippedMindset, setFlippedMindset] = useState({});
   const [flippedLessons, setFlippedLessons] = useState({});
   const [flippedPsychology, setFlippedPsychology] = useState({});
 
@@ -78,8 +77,8 @@ export default function MindsetPanel({ profile, onUpdateProfile }) {
     }
   }
 
-  function toggleCard(idx) {
-    setExpandedCards((prev) => ({
+  function toggleMindsetCard(idx) {
+    setFlippedMindset((prev) => ({
       ...prev,
       [idx]: !prev[idx],
     }));
@@ -223,35 +222,64 @@ export default function MindsetPanel({ profile, onUpdateProfile }) {
       {/* ── Section 2: Unfuck Ur Mindset ── */}
       <div className="card">
         <div className="card-title">
-          <Brain size={16} />
+          <Brain size={16} style={{ color: 'var(--danger)' }} />
           Unfuck Ur Mindset
         </div>
 
-        <div className="mindset-cards">
-          {(MINDSET_SHIFTS || []).map((shift, idx) => (
-            <div
-              key={idx}
-              className={`mindset-card ${expandedCards[idx] ? 'expanded' : ''}`}
-            >
-              <div className="mindset-card-header" onClick={() => toggleCard(idx)}>
-                <span>{shift.title}</span>
-                {expandedCards[idx] ? (
-                  <ChevronUp size={16} />
-                ) : (
-                  <ChevronDown size={16} />
-                )}
-              </div>
-              {expandedCards[idx] && (
-                <div className="mindset-card-body">
-                  <ul>
-                    {shift.points.map((point, pIdx) => (
-                      <li key={pIdx}>{point}</li>
-                    ))}
-                  </ul>
+        <div className="mindset-cards-grid">
+          {(MINDSET_SHIFTS || []).map((shift, idx) => {
+            const isFlipped = !!flippedMindset[idx];
+            return (
+              <div 
+                key={idx} 
+                className={`perspective-container ${isFlipped ? 'flipped' : ''}`}
+                style={{ height: '190px' }}
+                onClick={() => toggleMindsetCard(idx)}
+              >
+                <div className="flip-card-inner">
+                  <div className="flip-card-front" style={{ borderLeft: '3px solid var(--danger)' }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      color: 'var(--danger)',
+                      fontWeight: 'bold',
+                      fontSize: '14px'
+                    }}>
+                      {idx + 1}
+                    </div>
+                    <div style={{ 
+                      fontSize: '11px', 
+                      fontWeight: '800', 
+                      textTransform: 'uppercase', 
+                      letterSpacing: '0.05em',
+                      color: 'var(--text-primary)',
+                      textAlign: 'center',
+                      lineHeight: '1.4',
+                      padding: '0 8px'
+                    }}>
+                      {shift.title.replace(/^\d+\.\s*/, '')}
+                    </div>
+                    <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Click to reveal ➜</span>
+                  </div>
+                  <div className="flip-card-back" style={{ borderColor: 'var(--danger)', padding: '12px' }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '10px', color: 'var(--danger)', marginBottom: '6px', textTransform: 'uppercase' }}>
+                      Shift {idx + 1}
+                    </div>
+                    <ul style={{ margin: 0, paddingLeft: '14px', fontSize: '11px', color: 'var(--text-primary)' }}>
+                      {shift.points.map((point, pIdx) => (
+                        <li key={pIdx} style={{ marginBottom: '4px', lineHeight: '1.4' }}>{point}</li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-              )}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       </div>
 
