@@ -257,6 +257,36 @@ function App() {
 
         {/* === EXECUTION ENGINE TAB === */}
         <div className={`tab-content${activeTab === 'tab-execute' ? ' active' : ''}`}>
+          {/* Grounding Core Principle Header Banner */}
+          <div style={{
+            background: 'linear-gradient(90deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%)',
+            border: '1px solid var(--border)',
+            borderLeft: '4px solid var(--accent)',
+            borderRadius: '12px',
+            padding: '16px 24px',
+            marginBottom: '20px',
+            textAlign: 'center',
+            boxShadow: '0 4px 15px rgba(0, 0, 0, 0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              fontSize: '13.5px',
+              fontWeight: '700',
+              lineHeight: '1.6',
+              color: 'var(--text-primary)',
+              fontStyle: 'italic',
+              letterSpacing: '0.01em',
+              fontFamily: 'var(--font-sans)',
+              maxWidth: '800px'
+            }}>
+              "Your goal should not be to predict the market. Your goal should be to execute your strategy flawlessly, manage your risk, and allow the probability to produce profit over hundreds of trades."
+            </div>
+          </div>
+
           <DuoPartner 
             positions={positions} 
             gamificationState={profile?.gamification_state} 
