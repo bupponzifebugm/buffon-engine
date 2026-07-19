@@ -163,82 +163,136 @@ export default function MistakesLog({ mistakes, onAddMistake, onDeleteMistake, o
     }
 
     resetForm();
-  }
-
-  const renderMistakeCard = (m) => {
+  }  const renderMistakeCard = (m) => {
     const mUrls = m.image_url ? m.image_url.split(',').map(u => u.trim()).filter(Boolean) : [];
     return (
-      <div key={m.id} className="mistake-receipt" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px' }}>
-        <div className="mistake-receipt-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-          <div className="mistake-receipt-meta" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <span className="ticker-badge" style={{ background: 'var(--bg-primary)', padding: '4px 10px', borderRadius: '6px', fontWeight: 'bold', border: '1px solid var(--border)' }}>{m.ticker}</span>
-            <span className="mistake-type-badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '4px 10px', borderRadius: '6px', fontSize: '13px', fontWeight: '500' }}>{m.mistake_type}</span>
-            <span className="mistake-date" style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
-              {m.created_at ? fmtDate(m.created_at) : '—'}
-            </span>
+      <div 
+        key={m.id} 
+        className="mistake-receipt" 
+        style={{ 
+          background: 'var(--bg-tertiary)', 
+          border: '1px dashed var(--border-strong)', 
+          borderRadius: '8px', 
+          padding: '24px',
+          fontFamily: 'var(--font-mono), monospace',
+          position: 'relative',
+          overflow: 'hidden',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+        }}
+      >
+        {/* RUNGKAD / PAID Stamp */}
+        <div style={{
+          position: 'absolute',
+          top: '30px',
+          right: '35px',
+          border: '3px double var(--danger)',
+          color: 'var(--danger)',
+          borderRadius: '4px',
+          textTransform: 'uppercase',
+          transform: 'rotate(-18deg)',
+          fontWeight: '900',
+          padding: '6px 12px',
+          fontSize: '13px',
+          letterSpacing: '3px',
+          opacity: 0.25,
+          pointerEvents: 'none',
+          zIndex: 5,
+          background: 'rgba(239, 68, 68, 0.05)',
+          fontFamily: 'sans-serif'
+        }}>
+          RUNGKAD!
+        </div>
+
+        {/* Receipt Header Header */}
+        <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', userSelect: 'none' }}>======================================</div>
+          <div style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '2px', color: 'var(--text-primary)' }}>MISTAKE TUITION RECEIPT</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', userSelect: 'none' }}>======================================</div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '12px' }}>
+          <div>
+            <span style={{ color: 'var(--text-secondary)' }}>ITEM: </span>
+            <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>{m.ticker}</span>
           </div>
-          <div className="mistake-receipt-actions" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <span className="mistake-tuition" style={{ color: 'var(--text-primary)', fontWeight: 'bold', fontSize: '15px' }}>{fmtRp(m.tuition_loss || 0)}</span>
-            
-            <div style={{ display: 'flex', gap: '4px' }}>
-              <button
-                className="btn-small"
-                onClick={() => startEditing(m)}
-                title="Edit insight"
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px' }}
-              >
-                <Edit2 size={15} />
-              </button>
-              <button
-                className="btn-small"
-                onClick={() => {
-                  if(confirm(`Delete insight for ${m.ticker}?`)) onDeleteMistake(m.id);
-                }}
-                title="Delete insight"
-                style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '4px' }}
-              >
-                <Trash2 size={15} />
-              </button>
-            </div>
+          <div style={{ color: 'var(--text-secondary)' }}>
+            {m.created_at ? new Date(m.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '—'}
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ fontSize: '12px', marginBottom: '12px', color: 'var(--text-primary)', lineHeight: '1.4' }}>
+          <span style={{ color: 'var(--text-secondary)' }}>MISTAKE: </span>
+          <span style={{ fontWeight: 'bold' }}>{m.mistake_type}</span>
+        </div>
+
+        <div style={{ borderBottom: '1px dashed var(--border-strong)', marginBottom: '12px' }} />
+
+        {/* Description body */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12px', lineHeight: '1.6', color: 'var(--text-primary)' }}>
           {m.notes && (
-            <div className="mistake-notes" style={{ fontSize: '14px', lineHeight: '1.6', color: 'var(--text-primary)' }}>
-              <strong style={{ color: 'var(--text-secondary)' }}>What happened:</strong><br/>
-              {m.notes}
+            <div>
+              <span style={{ color: 'var(--text-secondary)', fontWeight: 'bold' }}>[WHAT_HAPPENED]</span>
+              <p style={{ margin: '4px 0 0 0', whiteSpace: 'pre-wrap' }}>{m.notes}</p>
             </div>
           )}
           {m.action_plan && (
-            <div className="mistake-action-plan" style={{ fontSize: '14px', lineHeight: '1.6', color: 'var(--text-primary)' }}>
-              <strong style={{ color: 'var(--text-secondary)' }}>Action plan:</strong><br/>
-              {m.action_plan}
+            <div>
+              <span style={{ color: 'var(--text-secondary)', fontWeight: 'bold' }}>[NEXT_ACTION_PLAN]</span>
+              <p style={{ margin: '4px 0 0 0', whiteSpace: 'pre-wrap', color: 'var(--accent)' }}>{m.action_plan}</p>
             </div>
           )}
 
           {mUrls.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 300px))', gap: '12px', marginTop: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px', marginTop: '6px' }}>
               {mUrls.map((u, i) => (
-                <img key={i} src={u} alt="Insight proof" style={{ width: '100%', borderRadius: '8px', border: '1px solid var(--border)' }} />
+                <img key={i} src={u} alt="Insight proof" style={{ width: '100%', borderRadius: '4px', border: '1px solid var(--border)' }} />
               ))}
             </div>
           )}
 
           {m.mistake_type && MISTAKE_SOLUTIONS[m.mistake_type] && (
-            <div className="mistake-mapped-solution" style={{
-              marginTop: '8px',
-              padding: '12px 16px',
-              background: 'rgba(239, 68, 68, 0.04)',
-              borderLeft: '3px solid var(--danger)',
-              borderRadius: '4px',
-              fontSize: '13px',
-              lineHeight: '1.5',
-              color: 'var(--text-primary)'
+            <div style={{
+              marginTop: '6px',
+              padding: '10px 14px',
+              background: 'rgba(239, 68, 68, 0.05)',
+              borderLeft: '2px solid var(--danger)',
+              fontSize: '11px',
+              lineHeight: '1.4'
             }}>
-              <strong>💡 System Solution:</strong> {MISTAKE_SOLUTIONS[m.mistake_type]}
+              <span style={{ fontWeight: 'bold', color: 'var(--danger)' }}>💡 SYSTEM WORKAROUND:</span> {MISTAKE_SOLUTIONS[m.mistake_type]}
             </div>
           )}
+        </div>
+
+        <div style={{ borderBottom: '1px dashed var(--border-strong)', marginTop: '12px', marginBottom: '12px' }} />
+
+        {/* Bottom Tuition Info */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>TUITION TAX:</span>
+            <div style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--danger)' }}>{fmtRp(m.tuition_loss || 0)}</div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <button
+              className="btn-small"
+              onClick={() => startEditing(m)}
+              title="Edit receipt"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px 10px', fontSize: '11px', borderRadius: '4px' }}
+            >
+              <Edit2 size={12} style={{ marginRight: '4px', verticalAlign: 'middle' }} /> Edit
+            </button>
+            <button
+              className="btn-small"
+              onClick={() => {
+                if(confirm(`Void receipt for ${m.ticker}?`)) onDeleteMistake(m.id);
+              }}
+              title="Void receipt"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--danger)', cursor: 'pointer', padding: '6px 10px', fontSize: '11px', borderRadius: '4px' }}
+            >
+              <Trash2 size={12} style={{ marginRight: '4px', verticalAlign: 'middle' }} /> Void
+            </button>
+          </div>
         </div>
       </div>
     );
