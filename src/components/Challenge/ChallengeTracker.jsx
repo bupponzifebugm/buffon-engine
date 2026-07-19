@@ -1,5 +1,5 @@
 import { TIERS, TIER_ORDER } from '../../lib/constants';
-import { TrendingUp, Trophy, AlertTriangle } from 'lucide-react';
+import { TrendingUp, Trophy, AlertTriangle, Flame } from 'lucide-react';
 
 export default function ChallengeTracker({ challengeData, cleanStreak, currentTierKey, onUpdateTrade }) {
   const currentTier = TIERS[currentTierKey];
@@ -46,9 +46,73 @@ export default function ChallengeTracker({ challengeData, cleanStreak, currentTi
           <div className="leg-item"><div className="leg-dot" style={{ background: 'var(--danger)' }} /> Loss</div>
           <div className="leg-item"><div className="leg-dot" style={{ background: 'var(--warning)' }} /> Violation</div>
         </div>
-        <div style={{ fontSize: 12, fontWeight: 700 }}>
-          <TrendingUp size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />
-          {cleanStreak} Clean Streak
+      </div>
+
+      {/* Retro Arcade Combustion/Flame Gauge */}
+      <div style={{
+        marginTop: '16px',
+        padding: '14px',
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border)',
+        borderRadius: '10px',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {cleanStreak >= 3 && (
+          <div style={{
+            position: 'absolute',
+            top: 0, right: 0, bottom: 0, left: 0,
+            boxShadow: 'inset 0 0 15px rgba(249, 115, 22, 0.12)',
+            pointerEvents: 'none'
+          }} />
+        )}
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Flame 
+              size={18} 
+              style={{ 
+                color: cleanStreak >= 5 ? '#f97316' : 'var(--text-secondary)',
+                animation: cleanStreak >= 3 ? 'pulse 1.2s infinite ease-in-out' : 'none',
+                filter: cleanStreak >= 5 ? 'drop-shadow(0 0 4px rgba(249, 115, 22, 0.6))' : 'none'
+              }} 
+            />
+            <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '0.05em' }}>
+              {cleanStreak >= 5 ? '🔥 BOOST COMBUSTION:' : '⚡ CLEAN STREAK METER:'}
+            </span>
+          </div>
+          <span style={{ fontSize: '13px', fontWeight: 'bold', fontFamily: 'var(--font-mono)', color: cleanStreak >= 5 ? '#f97316' : 'var(--accent)' }}>
+            {cleanStreak} / {nextTier ? nextTier.requiredStreak : 20} Trades
+          </span>
+        </div>
+
+        {/* The Combustion Segments */}
+        <div style={{ display: 'flex', gap: '4px', height: '12px', background: 'var(--bg-primary)', padding: '2px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+          {Array.from({ length: 15 }).map((_, segmentIdx) => {
+            const target = nextTier ? nextTier.requiredStreak : 20;
+            const segmentsPerStreak = 15 / target;
+            const isActive = segmentIdx < Math.round(cleanStreak * segmentsPerStreak);
+            
+            let color = '#94a3b8';
+            if (isActive) {
+              if (segmentIdx < 5) color = '#fbbd23'; 
+              else if (segmentIdx < 10) color = '#f97316'; 
+              else color = '#ef4444'; 
+            }
+
+            return (
+              <div 
+                key={segmentIdx}
+                style={{
+                  flex: 1,
+                  background: isActive ? color : 'transparent',
+                  borderRadius: '2px',
+                  boxShadow: isActive ? `0 0 6px ${color}` : 'none',
+                  transition: 'all 0.3s ease'
+                }}
+              />
+            );
+          })}
         </div>
       </div>
 
