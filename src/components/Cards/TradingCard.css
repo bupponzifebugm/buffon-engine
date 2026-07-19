@@ -23,34 +23,21 @@
   opacity: 0.6;
 }
 
-/* Fame Card Styles */
-.fame {
-  background: linear-gradient(135deg, #1e293b, #0f172a);
-  border: 2px solid #fbbf24;
-  box-shadow: 0 0 20px rgba(251, 191, 36, 0.3), inset 0 0 20px rgba(251, 191, 36, 0.1);
+/* Rarity Card Styles & Transitions */
+.rarity-legendary, .rarity-epic, .rarity-rare, .rarity-common, .rarity-cursed {
+  transition: transform 0.1s ease-out, box-shadow 0.2s ease;
 }
 
 .fame-overlay {
   background: linear-gradient(
     105deg,
     transparent 20%,
-    rgba(255, 255, 255, 0.2) 25%,
-    rgba(255, 255, 255, 0.5) 30%,
+    rgba(255, 255, 255, 0.15) 25%,
+    rgba(255, 255, 255, 0.35) 30%,
     transparent 35%
   );
   background-size: 200% 200%;
   animation: holo 6s infinite linear;
-}
-
-/* Shame Card Styles */
-.shame {
-  background: linear-gradient(135deg, #3f1d1d, #1a0808);
-  border: 2px solid #ef4444;
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
-}
-
-.shame-overlay {
-  background: radial-gradient(circle at center, transparent, rgba(239, 68, 68, 0.15) 80%);
 }
 
 /* Keyframes */
