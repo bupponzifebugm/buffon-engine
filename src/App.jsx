@@ -79,11 +79,8 @@ function App() {
       const diffMs = new Date() - tradeTime;
       const cooldownPeriodMs = 60 * 60 * 1000; // 1 hour cooldown
       const remainingMs = cooldownPeriodMs - diffMs;
-      if (remainingMs > 0) {
-        setCooldownTimeLeft(Math.ceil(remainingMs / 1000));
-      } else {
-        setCooldownTimeLeft(0);
-      }
+      const newTime = remainingMs > 0 ? Math.ceil(remainingMs / 1000) : 0;
+      setCooldownTimeLeft(prev => (prev === newTime ? prev : newTime));
     };
 
     checkCooldown();
@@ -124,11 +121,18 @@ function App() {
   }, [profile]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setUgmStatus(checkUgmAcademics());
-    }, 15000);
+    const updateUgm = () => {
+      setUgmStatus(prev => {
+        const next = checkUgmAcademics();
+        if (prev.isObservationMode === next.isObservationMode && prev.currentClass === next.currentClass) {
+          return prev;
+        }
+        return next;
+      });
+    };
 
-    setUgmStatus(checkUgmAcademics());
+    updateUgm();
+    const interval = setInterval(updateUgm, 15000);
     return () => clearInterval(interval);
   }, [checkUgmAcademics]);
 
@@ -256,168 +260,189 @@ function App() {
         <TabNav activeTab={activeTab} onTabChange={setActiveTab} />
 
         {/* === EXECUTION ENGINE TAB === */}
-        <div className={`tab-content${activeTab === 'tab-execute' ? ' active' : ''}`}>
-          {/* Grounding Core Principle Header Banner */}
-          <div style={{
-            background: 'linear-gradient(90deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%)',
-            border: '1px solid var(--border)',
-            borderLeft: '4px solid var(--accent)',
-            borderRadius: '12px',
-            padding: '16px 24px',
-            marginBottom: '20px',
-            textAlign: 'center',
-            boxShadow: '0 4px 15px rgba(0, 0, 0, 0.15)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              fontSize: '13.5px',
-              fontWeight: '700',
-              lineHeight: '1.6',
-              color: 'var(--text-primary)',
-              fontStyle: 'italic',
-              letterSpacing: '0.01em',
-              fontFamily: 'var(--font-sans)',
-              maxWidth: '800px'
+        {activeTab === 'tab-execute' && (
+          <div className="tab-content active">
+            {/* Grounding Core Principle Header Banner */}
+            <div className="grounding-wisdom-banner" style={{
+              background: 'linear-gradient(90deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%)',
+              border: '1px solid var(--border)',
+              borderLeft: '4px solid var(--accent)',
+              borderRadius: '12px',
+              padding: '16px 24px',
+              marginBottom: '20px',
+              textAlign: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
+              overflow: 'hidden'
             }}>
-              "Your goal should not be to predict the market. Your goal should be to execute your strategy flawlessly, manage your risk, and allow the probability to produce profit over hundreds of trades."
+              <div style={{
+                fontSize: '13.5px',
+                fontWeight: '700',
+                lineHeight: '1.6',
+                color: 'var(--text-primary)',
+                fontStyle: 'italic',
+                letterSpacing: '0.01em',
+                fontFamily: 'var(--font-sans)',
+                maxWidth: '800px'
+              }}>
+                "Your goal should not be to predict the market. Your goal should be to execute your strategy flawlessly, manage your risk, and allow the probability to produce profit over hundreds of trades."
+              </div>
             </div>
-          </div>
 
-          <DuoPartner 
-            positions={positions} 
-            gamificationState={profile?.gamification_state} 
-            cooldownTimeLeft={cooldownTimeLeft} 
-            ugmStatus={ugmStatus} 
-          />
-          <AlertCenter
-            todaysGate={todaysGate}
-            cleanStreak={cleanStreak}
-            currentTierKey={currentTierKey}
-            dailyPnl={dailyPnl}
-            weeklyPnl={weeklyPnl}
-            monthlyPnl={monthlyPnl}
-            tierConfig={tierConfig}
-            positions={positions}
-            cooldownTimeLeft={cooldownTimeLeft}
-            ugmStatus={ugmStatus}
-          />
-
-          <DrawdownMonitor
-            capital={capital}
-            dailyPnl={dailyPnl}
-            weeklyPnl={weeklyPnl}
-            monthlyPnl={monthlyPnl}
-            tierConfig={tierConfig}
-          />
-
-          <div className="grid-2">
-            <SizingCalculator
-              capital={capital}
-              tierConfig={tierConfig}
-              onOpenAddModal={handleOpenAddModal}
-              onResultsChange={setCalcResults}
+            <DuoPartner 
+              positions={positions} 
+              gamificationState={profile?.gamification_state} 
+              cooldownTimeLeft={cooldownTimeLeft} 
+              ugmStatus={ugmStatus} 
+            />
+            <AlertCenter
               todaysGate={todaysGate}
+              cleanStreak={cleanStreak}
+              currentTierKey={currentTierKey}
+              dailyPnl={dailyPnl}
+              weeklyPnl={weeklyPnl}
+              monthlyPnl={monthlyPnl}
+              tierConfig={tierConfig}
+              positions={positions}
               cooldownTimeLeft={cooldownTimeLeft}
               ugmStatus={ugmStatus}
             />
-            <div>
-              <TPProtocol results={calcResults} />
-              {!challengeLoading && (
-                <ChallengeTracker
-                  challengeData={challengeData}
-                  cleanStreak={cleanStreak}
-                  currentTierKey={currentTierKey}
-                  onUpdateTrade={handleUpdateTrade}
-                />
-              )}
+
+            <DrawdownMonitor
+              capital={capital}
+              dailyPnl={dailyPnl}
+              weeklyPnl={weeklyPnl}
+              monthlyPnl={monthlyPnl}
+              tierConfig={tierConfig}
+            />
+
+            <div className="grid-2">
+              <SizingCalculator
+                capital={capital}
+                tierConfig={tierConfig}
+                onOpenAddModal={handleOpenAddModal}
+                onResultsChange={setCalcResults}
+                todaysGate={todaysGate}
+                cooldownTimeLeft={cooldownTimeLeft}
+                ugmStatus={ugmStatus}
+              />
+              <div>
+                <TPProtocol results={calcResults} />
+                {!challengeLoading && (
+                  <ChallengeTracker
+                    challengeData={challengeData}
+                    cleanStreak={cleanStreak}
+                    currentTierKey={currentTierKey}
+                    onUpdateTrade={handleUpdateTrade}
+                  />
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* === ANALYTICS & HEATMAP TAB === */}
-        <div className={`tab-content${activeTab === 'tab-analytics' ? ' active' : ''}`}>
-          <AnalyticsDashboard 
-            positions={positions} 
-            cleanStreak={cleanStreak}
-            currentTierKey={currentTierKey}
-            gamificationState={profile?.gamification_state}
-            updateGamificationState={updateGamificationState}
-          />
-        </div>
+        {activeTab === 'tab-analytics' && (
+          <div className="tab-content active">
+            <AnalyticsDashboard 
+              positions={positions} 
+              cleanStreak={cleanStreak}
+              currentTierKey={currentTierKey}
+              gamificationState={profile?.gamification_state}
+              updateGamificationState={updateGamificationState}
+            />
+          </div>
+        )}
 
         {/* === HALL OF FAME TAB === */}
-        <div className={`tab-content${activeTab === 'tab-cards' ? ' active' : ''}`}>
-          {activeTab === 'tab-cards' && <CardGallery positions={positions} />}
-        </div>
+        {activeTab === 'tab-cards' && (
+          <div className="tab-content active">
+            <CardGallery positions={positions} />
+          </div>
+        )}
 
         {/* === RISK & DRAWDOWN TAB === */}
-        <div className={`tab-content${activeTab === 'tab-risk' ? ' active' : ''}`}>
-          <PositionsTable
-            positions={positions}
-            onEditPosition={handleEditPosition}
-            onDeletePosition={handleDeletePosition}
-            onClearPositions={handleClearPositions}
-          />
-        </div>
+        {activeTab === 'tab-risk' && (
+          <div className="tab-content active">
+            <PositionsTable
+              positions={positions}
+              onEditPosition={handleEditPosition}
+              onDeletePosition={handleDeletePosition}
+              onClearPositions={handleClearPositions}
+            />
+          </div>
+        )}
 
         {/* === TRADING SYSTEM TAB === */}
-        <div className={`tab-content${activeTab === 'tab-system' ? ' active' : ''}`}>
-          <TradingSystem />
-        </div>
+        {activeTab === 'tab-system' && (
+          <div className="tab-content active">
+            <TradingSystem />
+          </div>
+        )}
 
         {/* === GROWTH INSIGHTS TAB === */}
-        <div className={`tab-content${activeTab === 'tab-mistakes' ? ' active' : ''}`}>
-          <MistakesLog
-            mistakes={mistakes}
-            onAddMistake={handleAddMistake}
-            onDeleteMistake={handleDeleteMistake}
-            onUpdateMistake={handleUpdateMistake}
-            onUploadImage={uploadImage}
-          />
-        </div>
+        {activeTab === 'tab-mistakes' && (
+          <div className="tab-content active">
+            <MistakesLog
+              mistakes={mistakes}
+              onAddMistake={handleAddMistake}
+              onDeleteMistake={handleDeleteMistake}
+              onUpdateMistake={handleUpdateMistake}
+              onUploadImage={uploadImage}
+            />
+          </div>
+        )}
 
         {/* === CONFIDENT RECEIPTS TAB === */}
-        <div className={`tab-content${activeTab === 'tab-confident' ? ' active' : ''}`}>
-          <ConfidentLog
-            receipts={confidentReceipts}
-            onAddReceipt={handleAddConfidentReceipt}
-            onDeleteReceipt={handleDeleteConfidentReceipt}
-            onUpdateReceipt={handleUpdateConfidentReceipt}
-            onUploadImage={uploadImage}
-          />
-        </div>
+        {activeTab === 'tab-confident' && (
+          <div className="tab-content active">
+            <ConfidentLog
+              receipts={confidentReceipts}
+              onAddReceipt={handleAddConfidentReceipt}
+              onDeleteReceipt={handleDeleteConfidentReceipt}
+              onUpdateReceipt={handleUpdateConfidentReceipt}
+              onUploadImage={uploadImage}
+            />
+          </div>
+        )}
 
         {/* === MINDSET & LESSONS TAB === */}
-        <div className={`tab-content${activeTab === 'tab-mindset' ? ' active' : ''}`}>
-          <MindsetPanel profile={profile} onUpdateProfile={updateProfile} />
-        </div>
+        {activeTab === 'tab-mindset' && (
+          <div className="tab-content active">
+            <MindsetPanel profile={profile} onUpdateProfile={updateProfile} />
+          </div>
+        )}
 
         {/* === JOURNAL TAB === */}
-        <div className={`tab-content${activeTab === 'tab-journal' ? ' active' : ''}`}>
-          <Journal
-            notes={notes}
-            activeNote={activeNote}
-            onCreateNote={createNote}
-            onOpenNote={openNote}
-            onUpdateNote={updateNote}
-            onDeleteNote={deleteNote}
-            onUploadImage={uploadImage}
-          />
-        </div>
+        {activeTab === 'tab-journal' && (
+          <div className="tab-content active">
+            <Journal
+              notes={notes}
+              activeNote={activeNote}
+              onCreateNote={createNote}
+              onOpenNote={openNote}
+              onUpdateNote={updateNote}
+              onDeleteNote={deleteNote}
+              onUploadImage={uploadImage}
+            />
+          </div>
+        )}
 
         {/* === NIGHT PLANNER TAB === */}
-        <div className={`tab-content${activeTab === 'tab-planner' ? ' active' : ''}`}>
-          <NightPlanner />
-        </div>
+        {activeTab === 'tab-planner' && (
+          <div className="tab-content active">
+            <NightPlanner />
+          </div>
+        )}
 
         {/* === DAILY QUOTE TAB === */}
-        <div className={`tab-content${activeTab === 'tab-quotes' ? ' active' : ''}`}>
-          <DailyQuote />
-        </div>
+        {activeTab === 'tab-quotes' && (
+          <div className="tab-content active">
+            <DailyQuote />
+          </div>
+        )}
       </div>
 
       {/* Add Trade Modal */}

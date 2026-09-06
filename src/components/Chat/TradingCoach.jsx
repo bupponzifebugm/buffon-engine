@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { MessageSquare, X, Settings, Send, Brain, Key, Clock, Plus, ThumbsUp, ThumbsDown, Paperclip, FileText, Image as ImageIcon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { COACH_SYSTEM_PROMPT } from '../../lib/coachPrompt';
@@ -43,31 +43,6 @@ export default function TradingCoach({
     widthRef.current = drawerWidth;
   }, [drawerWidth]);
 
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (!isResizing.current) return;
-      const newWidth = window.innerWidth - e.clientX;
-      if (newWidth > 320 && newWidth < window.innerWidth * 0.9) {
-        setDrawerWidth(newWidth);
-      }
-    };
-
-    const handleMouseUp = () => {
-      if (isResizing.current) {
-        isResizing.current = false;
-        localStorage.setItem('buffon_coach_width', widthRef.current);
-      }
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, []);
-
   const defaultMessages = [
     { role: 'model', content: "I'm Buffon AI. I know your rules, your sizing, and your UGM schedule. Are you here to follow the system or donate money to the market today?" }
   ];
@@ -82,7 +57,6 @@ export default function TradingCoach({
   
   const [pendingAttachments, setPendingAttachments] = useState([]);
   const fileInputRef = useRef(null);
-
   const messagesEndRef = useRef(null);
 
   // Auto-scroll
@@ -97,27 +71,36 @@ export default function TradingCoach({
     localStorage.setItem('buffon_ai_chats', JSON.stringify(conversations));
   }, [conversations]);
 
-  // Resizer Logic
+  // Resizer Logic - Only attach listeners during active drag
+  const handleMouseMove = useCallback((e) => {
+    if (!isResizing.current) return;
+    const newWidth = window.innerWidth - e.clientX;
+    if (newWidth > 320 && newWidth < window.innerWidth * 0.9) {
+      setDrawerWidth(newWidth);
+    }
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    if (isResizing.current) {
+      isResizing.current = false;
+      localStorage.setItem('buffon_coach_width', widthRef.current);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    }
+  }, [handleMouseMove]);
+
   const handleMouseDown = (e) => {
     isResizing.current = true;
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
   };
 
-  const handleMouseMove = (e) => {
-    if (!isResizing.current) return;
-    const newWidth = window.innerWidth - e.clientX;
-    if (newWidth > 320 && newWidth < window.innerWidth * 0.9) {
-      setDrawerWidth(newWidth);
-    }
-  };
-
-  const handleMouseUp = () => {
-    isResizing.current = false;
-    localStorage.setItem('buffon_coach_width', drawerWidth);
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
-  };
+  useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [handleMouseMove, handleMouseUp]);
 
   const handleSaveKey = () => {
     if (tempKey.trim()) {

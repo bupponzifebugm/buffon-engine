@@ -13,14 +13,19 @@ export default function DailyQuote() {
     if (!particlesActive) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    if (!ctx) return;
     let animationFrameId;
+    let bgGrad = null;
 
     const resizeCanvas = () => {
       const parent = canvas.parentElement;
       if (parent) {
         canvas.width = parent.clientWidth;
         canvas.height = 420;
+        bgGrad = ctx.createLinearGradient(0, 0, 0, 420);
+        bgGrad.addColorStop(0, '#0a0a14');
+        bgGrad.addColorStop(1, '#040408');
       }
     };
     
@@ -29,34 +34,37 @@ export default function DailyQuote() {
 
     // Particle setup (Starfield)
     const particles = [];
-    const particleCount = 50;
+    const particleCount = 35;
     for (let i = 0; i < particleCount; i++) {
       particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        radius: Math.random() * 1.8 + 0.4,
+        x: Math.random() * (canvas.width || 600),
+        y: Math.random() * (canvas.height || 420),
+        radius: Math.random() * 1.6 + 0.4,
         speedX: (Math.random() - 0.5) * 0.15,
-        speedY: -Math.random() * 0.25 - 0.05, // slowly float up
-        alpha: Math.random() * 0.6 + 0.1
+        speedY: -Math.random() * 0.22 - 0.05,
+        alpha: Math.random() * 0.5 + 0.1
       });
     }
 
     const animate = () => {
-      if (!ctx || !canvas) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (document.hidden) {
+        animationFrameId = requestAnimationFrame(animate);
+        return;
+      }
       
-      // Deep space night sky background
-      const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      bgGrad.addColorStop(0, '#0a0a14');
-      bgGrad.addColorStop(1, '#040408');
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (bgGrad) {
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
 
       // Draw stars
-      particles.forEach(p => {
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(129, 140, 248, ${p.alpha})`; // soft indigo star tint
+        ctx.fillStyle = `rgba(129, 140, 248, ${p.alpha})`;
         ctx.fill();
 
         p.x += p.speedX;
@@ -69,12 +77,12 @@ export default function DailyQuote() {
         if (p.x < 0 || p.x > canvas.width) {
           p.x = Math.random() * canvas.width;
         }
-      });
+      }
 
       animationFrameId = requestAnimationFrame(animate);
     };
 
-    animate();
+    animationFrameId = requestAnimationFrame(animate);
 
     return () => {
       cancelAnimationFrame(animationFrameId);
