@@ -15,15 +15,20 @@ export function useConfidentReceipts(user) {
   }, [user]);
 
   async function fetchReceipts() {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('confident_receipts')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('confident_receipts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-    if (!error && data) setReceipts(data);
-    setLoading(false);
+      if (!error && data) setReceipts(data);
+    } catch (err) {
+      console.error('Error fetching confident receipts:', err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function addReceipt(r) {

@@ -16,19 +16,24 @@ export function useMorningGate(user) {
   }, [user]);
 
   async function fetchTodaysGate() {
-    setLoading(true);
-    const today = getTodayString();
-    const { data, error } = await supabase
-      .from('morning_gates')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('gate_date', today)
-      .single();
+    try {
+      setLoading(true);
+      const today = getTodayString();
+      const { data, error } = await supabase
+        .from('morning_gates')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('gate_date', today)
+        .single();
 
-    if (!error && data) {
-      setTodaysGate(data);
+      if (!error && data) {
+        setTodaysGate(data);
+      }
+    } catch (err) {
+      console.error('Error fetching morning gate:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   const isGateCompleted = todaysGate !== null;

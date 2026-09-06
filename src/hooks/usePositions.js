@@ -38,15 +38,20 @@ export function usePositions(user, profile, updateGamificationState) {
   }, [user]);
 
   async function fetchPositions() {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('positions')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('positions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-    if (!error && data) setPositions(data);
-    setLoading(false);
+      if (!error && data) setPositions(data);
+    } catch (err) {
+      console.error('Error fetching positions:', err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function processGamification(pos) {

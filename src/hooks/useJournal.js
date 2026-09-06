@@ -17,15 +17,20 @@ export function useJournal(user) {
   }, [user]);
 
   async function fetchNotes() {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('journal_entries')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('journal_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-    if (!error && data) setNotes(data);
-    setLoading(false);
+      if (!error && data) setNotes(data);
+    } catch (err) {
+      console.error('Error fetching journal notes:', err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function createNote(initialData = {}) {

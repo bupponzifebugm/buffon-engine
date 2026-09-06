@@ -15,15 +15,20 @@ export function useMistakes(user) {
   }, [user]);
 
   async function fetchMistakes() {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('mistake_receipts')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('mistake_receipts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-    if (!error && data) setMistakes(data);
-    setLoading(false);
+      if (!error && data) setMistakes(data);
+    } catch (err) {
+      console.error('Error fetching mistakes:', err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function addMistake(m) {

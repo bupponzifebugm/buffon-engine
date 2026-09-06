@@ -16,22 +16,27 @@ export function useChallenge(user) {
   }, [user]);
 
   async function fetchChallenge() {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('challenge_trades')
-      .select('*')
-      .eq('user_id', user.id);
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('challenge_trades')
+        .select('*')
+        .eq('user_id', user.id);
 
-    if (!error && data) {
-      const arr = Array(30).fill(0);
-      data.forEach(row => {
-        if (row.trade_index >= 0 && row.trade_index < 30) {
-          arr[row.trade_index] = row.status;
-        }
-      });
-      setChallengeData(arr);
+      if (!error && data) {
+        const arr = Array(30).fill(0);
+        data.forEach(row => {
+          if (row.trade_index >= 0 && row.trade_index < 30) {
+            arr[row.trade_index] = row.status;
+          }
+        });
+        setChallengeData(arr);
+      }
+    } catch (err) {
+      console.error('Error fetching challenge trades:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   async function updateTrade(index, status) {
