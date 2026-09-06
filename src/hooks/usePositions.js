@@ -40,15 +40,30 @@ export function usePositions(user, profile, updateGamificationState) {
   async function fetchPositions() {
     try {
       setLoading(true);
+      if (user.id === 'local-trader') {
+        const local = localStorage.getItem('buffon_positions_local');
+        if (local) setPositions(JSON.parse(local));
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('positions')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (!error && data) setPositions(data);
+      if (!error && data) {
+        setPositions(data);
+        localStorage.setItem(`buffon_positions_${user.id}`, JSON.stringify(data));
+      } else {
+        const local = localStorage.getItem(`buffon_positions_${user.id}`);
+        if (local) setPositions(JSON.parse(local));
+      }
     } catch (err) {
       console.error('Error fetching positions:', err);
+      const local = localStorage.getItem(`buffon_positions_${user.id}`);
+      if (local) setPositions(JSON.parse(local));
     } finally {
       setLoading(false);
     }
@@ -121,56 +136,81 @@ export function usePositions(user, profile, updateGamificationState) {
     if (!user) return;
     const finalRR = await processGamification(pos);
 
-    const { data, error } = await supabase
-      .from('positions')
-      .insert({
-        user_id: user.id,
-        ticker: pos.ticker,
-        lots: pos.lots,
-        entry_price: pos.entry_price,
-        sl_price: pos.sl_price,
-        tp1_price: pos.tp1_price,
-        tp2_price: pos.tp2_price,
-        status: pos.status,
-        exit_price: pos.exit_price,
-        pnl: pos.pnl,
-        trade_date: pos.trade_date,
-        emotion: pos.emotion || 'calm',
-        is_violation: pos.is_violation || false,
-        violation_reason: pos.violation_reason || '',
-        process_score: pos.process_score || 0,
-        rr_awarded: finalRR,
-      })
-      .select()
-      .single();
+    const newPos = {
+      id: pos.id || `pos_${Date.now()}`,
+      user_id: user.id,
+      ticker: pos.ticker,
+      lots: pos.lots,
+      entry_price: pos.entry_price,
+      sl_price: pos.sl_price,
+      tp1_price: pos.tp1_price,
+      tp2_price: pos.tp2_price,
+      status: pos.status,
+      exit_price: pos.exit_price,
+      pnl: pos.pnl,
+      trade_date: pos.trade_date,
+      emotion: pos.emotion || 'calm',
+      is_violation: pos.is_violation || false,
+      violation_reason: pos.violation_reason || '',
+      process_score: pos.process_score || 0,
+      rr_awarded: finalRR,
+      created_at: new Date().toISOString()
+    };
 
-    if (!error && data) {
-      setPositions(prev => [data, ...prev]);
-    } else if (error) {
-      console.error('Supabase Insert Error:', error);
-      alert('Error saving position: ' + error.message);
+    if (user.id === 'local-trader') {
+      setPositions(prev => {
+        const next = [newPos, ...prev];
+        localStorage.setItem('buffon_positions_local', JSON.stringify(next));
+        return next;
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('positions')
+        .insert(newPos)
+        .select()
+        .single();
+
+      if (!error && data) {
+        setPositions(prev => [data, ...prev]);
+      } else {
+        console.error('Supabase Insert Error, saving locally:', error);
+        setPositions(prev => [newPos, ...prev]);
+      }
+    } catch (err) {
+      console.error('Insert error, fallback locally:', err);
+      setPositions(prev => [newPos, ...prev]);
     }
   }
 
   async function deletePosition(id) {
-    const { error } = await supabase
-      .from('positions')
-      .delete()
-      .eq('id', id);
-
-    if (!error) {
-      setPositions(prev => prev.filter(p => p.id !== id));
+    if (user?.id === 'local-trader') {
+      setPositions(prev => {
+        const next = prev.filter(p => p.id !== id);
+        localStorage.setItem('buffon_positions_local', JSON.stringify(next));
+        return next;
+      });
+      return;
     }
+    try {
+      await supabase.from('positions').delete().eq('id', id);
+    } catch (e) {}
+    setPositions(prev => prev.filter(p => p.id !== id));
   }
 
   async function clearPositions() {
     if (!user) return;
-    const { error } = await supabase
-      .from('positions')
-      .delete()
-      .eq('user_id', user.id);
-
-    if (!error) setPositions([]);
+    if (user.id === 'local-trader') {
+      setPositions([]);
+      localStorage.removeItem('buffon_positions_local');
+      return;
+    }
+    try {
+      await supabase.from('positions').delete().eq('user_id', user.id);
+    } catch (e) {}
+    setPositions([]);
   }
 
   async function updatePosition(id, updates, isClosing = false) {
@@ -178,18 +218,30 @@ export function usePositions(user, profile, updateGamificationState) {
       updates.rr_awarded = await processGamification({ ...updates });
     }
 
-    const { data, error } = await supabase
-      .from('positions')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
+    if (user?.id === 'local-trader') {
+      setPositions(prev => {
+        const next = prev.map(p => (p.id === id ? { ...p, ...updates } : p));
+        localStorage.setItem('buffon_positions_local', JSON.stringify(next));
+        return next;
+      });
+      return;
+    }
 
-    if (!error && data) {
-      setPositions(prev => prev.map(p => (p.id === id ? data : p)));
-    } else if (error) {
-      console.error('Supabase Update Error:', error);
-      alert('Error updating position: ' + error.message);
+    try {
+      const { data, error } = await supabase
+        .from('positions')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (!error && data) {
+        setPositions(prev => prev.map(p => (p.id === id ? data : p)));
+      } else {
+        setPositions(prev => prev.map(p => (p.id === id ? { ...p, ...updates } : p)));
+      }
+    } catch (err) {
+      setPositions(prev => prev.map(p => (p.id === id ? { ...p, ...updates } : p)));
     }
   }
 

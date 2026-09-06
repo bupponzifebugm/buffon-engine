@@ -38,7 +38,7 @@ import NightPlanner from './components/Planner/NightPlanner';
 import { TIERS } from './lib/constants';
 
 function App() {
-  const { user, profile, loading: authLoading, signIn, signUp, signOut, updateProfile, updateGamificationState } = useAuth();
+  const { user, profile, loading: authLoading, signIn, signUp, signOut, updateProfile, updateGamificationState, loginOffline } = useAuth();
   const { positions, dailyPnl, weeklyPnl, monthlyPnl, addPosition, deletePosition, clearPositions, updatePosition } = usePositions(user, profile, updateGamificationState);
   const { challengeData, cleanStreak, currentTierKey, updateTrade, loading: challengeLoading } = useChallenge(user);
   const { todaysGate, isGateCompleted, submitGate, loading: gateLoading } = useMorningGate(user);
@@ -238,7 +238,7 @@ function App() {
 
   // Not logged in
   if (!user) {
-    return <AuthGate onSignIn={signIn} onSignUp={signUp} />;
+    return <AuthGate onSignIn={signIn} onSignUp={signUp} onLoginOffline={loginOffline} />;
   }
 
   // Morning Gate

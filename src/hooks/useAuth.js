@@ -9,6 +9,34 @@ export function useAuth() {
   useEffect(() => {
     let isMounted = true;
 
+    // Check if user was previously using Offline/Local mode
+    if (localStorage.getItem('buffon_auth_offline') === 'true') {
+      const offlineUser = { id: LOCAL_USER_ID, email: 'buffonfebugm@gmail.com' };
+      const storedProfile = localStorage.getItem(`buffon_profile_${LOCAL_USER_ID}`);
+      const offlineProfile = storedProfile ? JSON.parse(storedProfile) : {
+        id: LOCAL_USER_ID,
+        display_name: 'Buffon Trader',
+        active_capital: 10000000,
+        current_tier: 'survival_10m',
+        gamification_state: {
+          heavy_shield: 0,
+          ult_points: 0,
+          is_eco_round: false,
+          is_ult_active: false,
+          xp_patience: 0,
+          xp_execution: 0,
+          xp_risk: 0,
+          unlocked_loots: ['theme_default'],
+          active_loot: 'theme_default',
+          custom_bounty: { name: 'Reward Name', target_rr: 500, current_rr: 0 }
+        }
+      };
+      setUser(offlineUser);
+      setProfile(offlineProfile);
+      setLoading(false);
+      return;
+    }
+
     // Timeout safeguard: never let the app hang on loading spinner for more than 2.5s
     const timeout = setTimeout(() => {
       if (isMounted) {
@@ -140,28 +168,70 @@ export function useAuth() {
     }
   }
 
+  const LOCAL_USER_ID = 'local-trader';
+
+  function loginOffline() {
+    const offlineUser = { id: LOCAL_USER_ID, email: 'buffonfebugm@gmail.com' };
+    const storedProfile = localStorage.getItem(`buffon_profile_${LOCAL_USER_ID}`);
+    const offlineProfile = storedProfile ? JSON.parse(storedProfile) : {
+      id: LOCAL_USER_ID,
+      display_name: 'Buffon Trader',
+      active_capital: 10000000,
+      current_tier: 'survival_10m',
+      gamification_state: {
+        heavy_shield: 0,
+        ult_points: 0,
+        is_eco_round: false,
+        is_ult_active: false,
+        xp_patience: 0,
+        xp_execution: 0,
+        xp_risk: 0,
+        unlocked_loots: ['theme_default'],
+        active_loot: 'theme_default',
+        custom_bounty: { name: 'Reward Name', target_rr: 500, current_rr: 0 }
+      }
+    };
+    localStorage.setItem('buffon_auth_offline', 'true');
+    localStorage.setItem(`buffon_profile_${LOCAL_USER_ID}`, JSON.stringify(offlineProfile));
+    setUser(offlineUser);
+    setProfile(offlineProfile);
+    setLoading(false);
+  }
+
   async function updateProfile(updates) {
     if (!user) return;
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', user.id)
-      .select()
-      .single();
+    if (user.id === LOCAL_USER_ID) {
+      setProfile(prev => {
+        const next = prev ? { ...prev, ...updates } : updates;
+        localStorage.setItem(`buffon_profile_${LOCAL_USER_ID}`, JSON.stringify(next));
+        return next;
+      });
+      return;
+    }
 
-    if (error) {
-      console.error('Supabase profile update failed. Applying local fallback:', error);
-      // Fallback: update profile state locally so UI is fully responsive
-      setProfile(prev => prev ? { ...prev, ...updates } : null);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', user.id)
+        .select()
+        .single();
 
-      if (updates.gamification_state) {
-        localStorage.setItem(
-          `buffon_gamification_state_${user.id}`,
-          JSON.stringify(updates.gamification_state)
-        );
+      if (error) {
+        console.error('Supabase profile update failed. Applying local fallback:', error);
+        setProfile(prev => prev ? { ...prev, ...updates } : null);
+        if (updates.gamification_state) {
+          localStorage.setItem(
+            `buffon_gamification_state_${user.id}`,
+            JSON.stringify(updates.gamification_state)
+          );
+        }
+      } else if (data) {
+        setProfile(data);
       }
-    } else if (data) {
-      setProfile(data);
+    } catch (err) {
+      console.error('Update profile error:', err);
+      setProfile(prev => prev ? { ...prev, ...updates } : null);
     }
   }
 
@@ -184,18 +254,45 @@ export function useAuth() {
   }
 
   async function signIn(email, password) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        return { error };
+      }
+      return { data, error: null };
+    } catch (err) {
+      console.error('Sign in exception:', err);
+      return { 
+        error: { 
+          message: 'Supabase database is unreachable / paused. Click "Continue in Local Mode" below to open the dashboard immediately.' 
+        } 
+      };
+    }
   }
 
   async function signUp(email, password) {
-    const { error } = await supabase.auth.signUp({ email, password });
-    return { error };
+    try {
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) return { error };
+      return { data, error: null };
+    } catch (err) {
+      console.error('Sign up exception:', err);
+      return { 
+        error: { 
+          message: 'Supabase database is unreachable / paused. Click "Continue in Local Mode" below to open the dashboard immediately.' 
+        } 
+      };
+    }
   }
 
   async function signOut() {
-    await supabase.auth.signOut();
+    localStorage.removeItem('buffon_auth_offline');
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {}
+    setUser(null);
+    setProfile(null);
   }
 
-  return { user, profile, loading, signIn, signUp, signOut, updateProfile, updateGamificationState };
+  return { user, profile, loading, signIn, signUp, signOut, updateProfile, updateGamificationState, loginOffline };
 }
